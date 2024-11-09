@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Pierangelo Cecchetto</title>
+    <link>http://localhost:1313/</link>
+    <description>Recent content on Pierangelo Cecchetto</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 10 Jul 2020 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Mocking endpoints with ZIO sttp</title>
+      <link>http://localhost:1313/post/2020-07-10-zio-sttp/</link>
+      <pubDate>Fri, 10 Jul 2020 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/post/2020-07-10-zio-sttp/</guid>
+      <description>&lt;p&gt;&lt;em&gt;How to use ZIO modules together with STTP&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Referential Transparency</title>
+      <link>http://localhost:1313/post/2018-06-01-on-rt-and-fp/</link>
+      <pubDate>Fri, 01 Jun 2018 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/post/2018-06-01-on-rt-and-fp/</guid>
+      <description>&lt;p&gt;&lt;em&gt;On the benefits and consequences of Referential Transparency&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Getting started with Apache Camel</title>
+      <link>http://localhost:1313/post/2015-07-06-ride-the-camel-1/</link>
+      <pubDate>Wed, 22 Jul 2015 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/post/2015-07-06-ride-the-camel-1/</guid>
+      <description>&lt;p&gt;&lt;em&gt;Enterprise Integration with Apache Camel&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Scala.js for dynamic systems simulation</title>
+      <link>http://localhost:1313/post/2015-04-12-scalajs-for-dynamic-systems-simulation/</link>
+      <pubDate>Sun, 12 Apr 2015 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/post/2015-04-12-scalajs-for-dynamic-systems-simulation/</guid>
+      <description>&lt;p&gt;&lt;em&gt;A Simple example using &lt;code&gt;Scala.js&lt;/code&gt;&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>A simple Scala application: calculating integrals</title>
+      <link>http://localhost:1313/post/2015-04-06-integrals-in-scala/</link>
+      <pubDate>Mon, 06 Apr 2015 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/post/2015-04-06-integrals-in-scala/</guid>
+      <description>&lt;p&gt;&lt;em&gt;An example application of Scala basic constructs&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Parallelizing costs</title>
+      <link>http://localhost:1313/post/2015-03-02-price-of-locks/</link>
+      <pubDate>Sun, 08 Mar 2015 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/post/2015-03-02-price-of-locks/</guid>
+      <description>&lt;p&gt;&lt;em&gt;Why parallelization does not come for free&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Precise rethrow</title>
+      <link>http://localhost:1313/post/2014-10-22-some-notes-about-java-certification-exam/</link>
+      <pubDate>Wed, 22 Oct 2014 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/post/2014-10-22-some-notes-about-java-certification-exam/</guid>
+      <description>&lt;p&gt;&lt;em&gt;Some stuff I&amp;rsquo;ve learned preparing for the Java Professional Certification exam&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

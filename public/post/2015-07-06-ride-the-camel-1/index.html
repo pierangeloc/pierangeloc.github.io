@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en-us"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<meta charset="utf-8" />
+
+  <title>Getting started with Apache Camel - Pierangelo Cecchetto</title>
+
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+
+<link rel="stylesheet" href="http://localhost:1313/css/latex.css" />
+<link rel="stylesheet" href="http://localhost:1313/css/main.css" />
+<script id="MathJax-script" async src="http://localhost:1313/js/tex-mml-chtml.js"></script>
+</head>
+<body class="latex-dark-auto">
+
+
+
+
+
+
+<header>
+  <nav class="navbar">
+  <div class="nav">
+    
+
+    <ul class="nav-links">
+      
+    </ul>
+  </div>
+</nav>
+  <div class="intro-header">
+    <div class="container">
+      <div class="post-heading">
+        
+          <h1>Getting started with Apache Camel</h1>
+          
+        
+      </div>
+    </div>
+  </div>
+</header>
+<div id="content">
+  <div class="container" role="main">
+    <article class="article" class="blog-post">
+      <div class="postmeta">
+        <span class="meta-post">
+  <i class="fa fa-calendar-alt"></i>
+  Jul 22, 2015
+  
+</span>
+      </div>
+      <br>
+      
+    <p><em>Enterprise Integration with Apache Camel</em></p>
+<h3 id="context">Context</h3>
+<p>Any application in an enterprise context, regardless how small this context might be, must relate with other systems. These systems might be File system, databases, webservices, message queues, logging systems, or systems using a particular communication protocol. Moreover, data typically undergo transformations, switching and routing logics before reaching other systems. The variety of combinations this allows is enormous, and tackling each of these in a hand made, custom way might easily become an integration nightmare. <em>Enterprise Integration Patterns</em> (EIP) establish a standard way to describe and identify the different approaches that one can follow to deal with an integration problem (see <a href="http://www.enterpriseintegrationpatterns.com">http://www.enterpriseintegrationpatterns.com</a>). They establish a common vocabulary that can be used unambiguously when talking about integration. If we consider that integration solutions are ubuquitous in application development, we realize easily how convenient it might be to have solid foundations on this subject.</p>
+<p><a href="http://camel.apache.org/">Apache Camel</a> is a framework that implements EIPs through a very expressive DSL, so one can translate almost immediately any EIP to a corresponding expression in the DSL. Moreover, Camel provides an extensible set of components that allows you to deal with basically any system that might come at hand. A key feature of Camel is that it deals with a <em>normalized message format</em>, so after the consumption point the message has a standard format, e.g. it can be handled identically either if it comes from consuming from a JMS queue or from a SOAP or REST webservice.</p>
+<p>It is easier to grasp the concepts setting up a simple Camel project and seeing these features at work.</p>
+<p>The easiest way to use Camel is to include it in your Spring context. We will use Camel 2.15.1 that provides a way to setup a Camel-based application without the need of xml configuration.</p>
+<h4 id="maven-dependencies">Maven Dependencies</h4>
+<p>First of all let&rsquo;s include the dependencies in our <code>pom.xml</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span>    <span style="color:#f92672">&lt;dependencies&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;groupId&gt;</span>junit<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;artifactId&gt;</span>junit<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;version&gt;</span>3.8.1<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;scope&gt;</span>test<span style="color:#f92672">&lt;/scope&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">&lt;!-- camel --&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.camel<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;artifactId&gt;</span>camel-core<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;version&gt;</span>${camel.version}<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.camel<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;artifactId&gt;</span>camel-spring<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;version&gt;</span>${camel.version}<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.camel<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;artifactId&gt;</span>camel-spring-javaconfig<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;version&gt;</span>${camel.version}<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/dependencies&gt;</span>
+</span></span></code></pre></div><p><code>camel-core</code> provides the essence of the camel infrastructure and basic components, <code>camel-spring</code> and <code>camel-spring-javaconfig</code> provide the classes and annotations that allow us to configure and run Camel within a Java-configured Spring application.</p>
+<h4 id="embed-camel-in-a-bootable-application">Embed Camel in a bootable application</h4>
+<p>The <code>org.apache.camel.spring.javaconfig.CamelConfiguration</code> abstract class can be used as a base Spring configuration class, where we can reference all the beans we might need in the standard Spring way (xml or annotations based). The additional thing that this class does is loading a <code>CamelContext</code> and injecting any bean that extends <code>RouteBuilder</code> available in the Spring context, in the <code>CamelContext</code>. More about the <code>CamelContext</code> will follow along the article.
+To give ourselves some more flexibility we will also use a standard xml Spring configuration file.</p>
+<p>The simplest configuration of such an application boils down to:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> * We extend CamelConfiguration so we can build a Camel Context using purely annotated classes
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> *
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> */</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@Configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Boot</span> <span style="color:#66d9ef">extends</span> CamelConfiguration {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>( String<span style="color:#f92672">[]</span> args ) <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        Main main <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Main();
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//use any route builder and components declared within this package</span>
+</span></span><span style="display:flex;"><span>        main.<span style="color:#a6e22e">setFileApplicationContextUri</span>(<span style="color:#e6db74">&#34;classpath:/spring/spring.xml&#34;</span>);
+</span></span><span style="display:flex;"><span>        main.<span style="color:#a6e22e">setBasedPackages</span>(<span style="color:#e6db74">&#34;nl.sytac.edu&#34;</span>);
+</span></span><span style="display:flex;"><span>        main.<span style="color:#a6e22e">run</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Bean</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> RouteBuilder <span style="color:#a6e22e">getSimpleRouteBuilder</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> SimpleRouteBuilder();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h4 id="integrating-camel-in-an-existing-web-application">Integrating Camel in an existing (web) application</h4>
+<p>If you want to integrate Camel in an existing application, injecting a <code>CamelContext</code> in an existing Spring application context is pretty straightforward, see e.g. <a href="https://github.com/pierangeloc/webshop-camel-springmvc">https://github.com/pierangeloc/webshop-camel-springmvc</a> for an example of how to integrate Camel within an existing web application.</p>
+<h3 id="simple-example">Simple Example</h3>
+<p>Now that we outlined the base structure of a Camel-based application, let&rsquo;s try to put this at work and build a simple application. The purpose is just to show how we can have a working application with minimum effort. Let us suppose we have a simple ERP application that provides us periodically with an updated stock situation about our e-shop, and we want to provide this information to a third application, e.g. an analytics application. We want to expose a simple REST service, with one URL and supporting only POST method. The aim is to persist the body of our POST call in a file, in a configured location. A file will be created for every request.</p>
+<h4 id="setup-rest-endpoint">Setup Rest Endpoint</h4>
+<p>The most convenient way to expose or consume a REST or SOAP webservices in Camel is to use the CXF component. With CXF we can use <code>JAX-RS</code> and <code>JAX-WS</code> annotations to configure the service classes.</p>
+<p>The first thing we must do is to setup the serving class that describes the resource we want to expose:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">package</span> io.sytac.edu.rest;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.Consumes;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.POST;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.Path;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.Produces;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.core.Response;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> * Service class for our REST endpoint
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@Path</span>(<span style="color:#e6db74">&#34;/inventory/status&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">InventoryResource</span> {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@POST</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Consumes</span>(<span style="color:#e6db74">&#34;application/json&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Produces</span>(<span style="color:#e6db74">&#34;application/json&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> Response <span style="color:#a6e22e">updateStatus</span>(String status) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We provided a trivial implementation of the method, as the real implementation of the logic will be delegated to the route we are about to create. The JAX-RS annotations allow us to specify in a transparent way the supported content types, having the implementation actually enforcing them.
+To make the endpoint available to our route, the most flexible way is to create a CXF bean that delegates to it, and to set it in our Spring context:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;beans</span> <span style="color:#a6e22e">xmlns=</span><span style="color:#e6db74">&#34;http://www.springframework.org/schema/beans&#34;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">xmlns:xsi=</span><span style="color:#e6db74">&#34;http://www.w3.org/2001/XMLSchema-instance&#34;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">xmlns:cxf=</span><span style="color:#e6db74">&#34;http://camel.apache.org/schema/cxf&#34;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">xsi:schemaLocation=</span><span style="color:#e6db74">&#34;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd&#34;</span><span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;cxf:rsServer</span> <span style="color:#a6e22e">id=</span><span style="color:#e6db74">&#34;restInventory&#34;</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;http://localhost:8000/services&#34;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">serviceClass=</span><span style="color:#e6db74">&#34;io.sytac.edu.rest.InventoryResource&#34;</span> <span style="color:#a6e22e">loggingFeatureEnabled=</span><span style="color:#e6db74">&#34;true&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/beans&gt;</span>
+</span></span></code></pre></div><p>Here we created a <code>cxf:rsServer</code> bean as we want it to serve requests, and specified the hostname, port, base url. The <code>serviceClass</code> attribute points to the class we defined above. Again, the implementation of this class is just ignored as the real processing of the request is specified in the route, which we are about to explore.</p>
+<h4 id="routing">Routing</h4>
+<p>Routes are specified in Camel by extending the abstract class  <code>RouteBuilder</code>, which provides all the Camel DSL goodness. All we have to do is implement the <code>configure() </code> method and specify the route(s). A route has one <em>consumer endpoint</em>, representing the point the processing starts from, and one or more <em>producer endpoints</em>, to represent delegation steps outside the present route, typically using <em>Camel components</em>.
+In our case we want to consume requests coming to our REST resource, therefore we will specify this circumstance in the <code>from</code>. The <a href="http://camel.apache.org/cxfrs.html"><code>cxfrs</code></a> component is used to expose or consume rest services through CXF. Being used in a <code>from</code> clause means it is acting as a REST server. The <em>transport layer</em> is provided in our case by a <em>Jetty server</em> that we embed in our application, but a standard Servlet transport could be used as well when running within a container.</p>
+<p>After the <code>from(...)</code> we specify the EIP that must be applied in our processing logic, and the DSL provides a natural and straightforward way to do so.
+A simple, dummy  implementation of this concept applied to our use case results in this initial version of our route builder, that defines one route that accepts any JSON request and replies with a static JSON response.
+This allows us to inspect how a <code>Processor</code> works in Camel. All the processing steps in Camel are essentially done through a chain of <code>Processor</code> implementations, each acting on a mutable instance of <code>Exchange</code> (we will get back later to the details of the <code>Exchange</code>). The DSL implicitly introduces processors in a transparent way, however in an explicit <code>Processor</code> we can access directly the structure of the <code>Exchange</code>. To some extent we can do this also through the DSL, and in general using the DSL gives us a more consistent view of the processing, without the need to inspect the details of a specific <code>Processor</code> implementation.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">process</span>(
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">new</span> Processor() {
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">process</span>(Exchange exchange) <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>                        exchange.<span style="color:#a6e22e">getOut</span>().<span style="color:#a6e22e">setBody</span>(
+</span></span><span style="display:flex;"><span>                                Response.<span style="color:#a6e22e">ok</span>().<span style="color:#a6e22e">entity</span>(
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#34;{\n&#34;</span> <span style="color:#f92672">+</span>
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#34;  \&#34;status\&#34;: \&#34;OK\&#34;,\n&#34;</span> <span style="color:#f92672">+</span>
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#34;  \&#34;message\&#34;: \&#34;stock update received\&#34;\n&#34;</span> <span style="color:#f92672">+</span>
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#34;}&#34;</span>).<span style="color:#a6e22e">build</span>());
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            );
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>If you <a href="https://github.com/sytac/camel-handson/commit/3a83bd88e6b4e9742d8330413ae5bcb2205ebba6">run the code at this check-point</a> you will see that the server is running and it accepts only JSON POST, replying always with the same message.</p>
+<p>What happened exactly along the route?</p>
+<p>The <code>cxf</code> component accepted the request, and mapped the body of the request in the body of the <code>In</code> message of the <code>Exchange</code>, and the request headers in equivalent message headers. At this point any processing step deals with the <em>normalized message structure</em> being the <code>Exchange</code>, and can access it and modify being completely agnostic of where it comes from (it could come equivalently from consuming a JMS queue) or where it will go to (file system or DB).</p>
+<p>The equivalent version that uses purely DSL constructs looks like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#e6db74">&#34;{\n&#34;</span> <span style="color:#f92672">+</span>
+</span></span><span style="display:flex;"><span>                                <span style="color:#e6db74">&#34;  \&#34;status\&#34;: \&#34;OK\&#34;,\n&#34;</span> <span style="color:#f92672">+</span>
+</span></span><span style="display:flex;"><span>                                <span style="color:#e6db74">&#34;  \&#34;message\&#34;: \&#34;stock update received\&#34;\n&#34;</span> <span style="color:#f92672">+</span>
+</span></span><span style="display:flex;"><span>                                <span style="color:#e6db74">&#34;}&#34;</span>))
+</span></span><span style="display:flex;"><span>        ;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>or even better, using Jackson as a provider for CXF i.e. having the whole serialization being handled behind the scenes:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This requires only a slight complication on the configuration of the <code>rsServer</code>, to set the provider to a Jackson bean. In any case this pays off in terms of conciseness and clarity.</p>
+<p><a href="https://github.com/sytac/camel-handson/commit/176bfd4949db3b5655827fdfa3259758326c15d0">Code check-point</a></p>
+<h4 id="persisting-the-message-to-a-file">Persisting the message to a file</h4>
+<p>After this diversion on the routing logic, let&rsquo;s focus again on our use case. We want to persist each JSON message we receive through the request body into a file, and we want a new file for each request to be written. The camel <a href="https://camel.apache.org/file2.html">File component</a> provides a flexible and straightforward way to do so. We must simply introduce a step that sends the <code>Exchange</code> to the <code>file</code> component, that takes care of all the boilerplate and tricky parts we have to deal with when writing on file system in a concurrent environment.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">to</span>(<span style="color:#e6db74">&#34;file:///tmp/inventory?fileName=inventory-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In general components in Camel are addressed by means of a url where the protocol represents the component we want to use, followed by a base url and a query string to configure and tweak the component itself. In this case we instruct <code>file</code> on how to create the file name, by means of the <em>simple expression language</em> which is very useful in Camel when we have to deal with dynamic content. In this case we want the file name to contain a simple timestamp.
+If we run this example, we can see that for every request there is a new file created and saved with the name we defined. We didn&rsquo;t have to bother about serializing/deserializing anything, as Camel did this for us. It is even possible to configure the components to deal properly with <em>streaming</em> situations, e.g. when we have to upload resources.</p>
+<p><a href="https://github.com/sytac/camel-handson/commit/ec3b524e495b630154a5cbbc6ce89d8a7d39edee">Code check-point</a></p>
+<h4 id="persisting-the-message-to-a-file-and-to-mongodb">Persisting the message to a file and to MongoDB</h4>
+<p>Let us suppose we want to store the incoming JSON on a MongoDB collection instead of file system. Of course Camel provides us with a component for this case, just it requires us to add an extra dependency:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-XML" data-lang="XML"><span style="display:flex;"><span>    <span style="color:#f92672">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.camel<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;artifactId&gt;</span>camel-mongodb<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;version&gt;</span>${camel.version}<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span></code></pre></div><p>Then we must just configure a <code>MongoClient</code> bean in our Spring context:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>    <span style="color:#a6e22e">@Bean</span>(name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;mongoClient&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> Mongo <span style="color:#a6e22e">mongoDb</span>() <span style="color:#66d9ef">throws</span> UnknownHostException {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//default port on localhost</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> MongoClient(<span style="color:#e6db74">&#34;localhost&#34;</span>, 27017);
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>and then the ceremony is over. All we are left to do is replacing our <code>file</code> component with a <code>mongodb</code> component, configured to use the <code>mongoClient</code> bean above defined, and to use the <code>inventory</code> database, with <code>updates</code>  as collection, and <code>save</code> operation (as we are saving our data in the collection).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">to</span>(<span style="color:#e6db74">&#34;mongodb:mongoClient?database=inventory&amp;collection=updates&amp;operation=save&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>If we run this code we can see that for every POST to our REST api we have an insertion on our database.
+<a href="https://github.com/sytac/camel-handson/commit/b85dc966736fc4bc669fbbc2f7b80050dfa4661b">Code check-point</a></p>
+<p>We can even decide to store the message both on file system and on Mongo, and the route looks like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">to</span>(<span style="color:#e6db74">&#34;file:///tmp/inventory?fileName=inventory-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">to</span>(<span style="color:#e6db74">&#34;mongodb:mongoClient?database=inventory&amp;collection=updates&amp;operation=save&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><a href="https://github.com/sytac/camel-handson/commit/0f72b67e863b4f0415955938d89e9184a47fcf3b">Code check-point</a></p>
+<h4 id="adding-routing-logic">Adding routing logic</h4>
+<p>In the previous example we have stored the same message both on DB and filesystem. We might think to split the incoming message based on its structure, and store e.g. some jeans related stock information on DB and the shoes related information on filesystem.</p>
+<p>For this kind of purposes an easy approach is to introduce a <code>when</code> clause where we can specify <code>jsonpath</code> expressions that our input message must match in order to be treated the way we need.
+For this exercise we will deal with shoes inventory updates that will be persisted on file:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;shoes&#34;</span>: [{
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Nike AIR&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Running shoes&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">13</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">23</span>
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Adidas Ultra Boost&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Running shoes&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">7</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;TOD&#39;s Suede&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Sneakers&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">3</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">9</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>and jeans inventory messages that will be persisted on DB:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;jeans&#34;</span>: [{
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Levi&#39;s 501&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Blue jeans&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">32</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Diesel&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Blue jeans&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">11</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">7</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We want also to deal with messages that do not conform to any of these 2 options, saving them in corresponding error files (we could also send them alternatively to a <em>dead letter queue</em>) .</p>
+<p>The solution is very straightforward, it just might take a bit if you are new to jsonpath expressions:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> String FILE_INVENTORY_ENDPOINT <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;file:///tmp/inventory?fileName=inventory-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> String MONGO_INVENTORY_ENDPOINT <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;mongodb:mongoClient?database=inventory&amp;collection=updates&amp;operation=save&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> String FILE_ERROR_ENDPOINT <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;file:///tmp/inventory?fileName=error-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">choice</span>()
+</span></span><span style="display:flex;"><span>                    .<span style="color:#a6e22e">when</span>().<span style="color:#a6e22e">jsonpath</span>(<span style="color:#e6db74">&#34;$[?(@.shoes)]&#34;</span>)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">to</span>(FILE_INVENTORY_ENDPOINT)
+</span></span><span style="display:flex;"><span>                    .<span style="color:#a6e22e">when</span>().<span style="color:#a6e22e">jsonpath</span>(<span style="color:#e6db74">&#34;$[?(@.jeans)]&#34;</span>)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">to</span>(MONGO_INVENTORY_ENDPOINT)
+</span></span><span style="display:flex;"><span>                    .<span style="color:#a6e22e">otherwise</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">to</span>(FILE_ERROR_ENDPOINT)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">end</span>()
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>choice</code> clause allows us to specify any predicate or expression we might want to evaluate on the incoming <code>Exchange</code>, in this case as we know we are dealing with JSON body so we make direct use of the <a href="http://goessner.net/articles/JsonPath/"><code>jsonpath</code></a> construct. Camel Expression language is very rich and it might be subject of a future post.</p>
+<p><a href="https://github.com/sytac/camel-handson/commit/f3e17df4b817da441550aa9eab58fed07a0ae0b6">Code check-point</a></p>
+<p>At this point I think the concept about Camel routing is pretty clear, and you can appreciate how easy it is to make use of the components and of the routing logic. Just looking at the DSL we can understand and reason about the processing steps our data go through. In a future post we will explore further some of the DSL routing features, e.g. how to handle errors or perform testing.</p>
+<p>I will close this article with an overview of the structural foundations of Camel and recurring concepts that will appear any time you have to deal with it.</p>
+<h3 id="camel-foundations">Camel foundations</h3>
+<p>Camel is built around some key concepts that we will try to explain in this section: <code>CamelContext</code>, <code>RouteBuilder</code>, <code>Endpoint</code> <code>Exchange</code>, <code>Message</code>, <code>ProducerTemplate</code></p>
+<h4 id="camelcontext"><code>CamelContext</code></h4>
+<p>The foundation on top of which all the Camel machinery runs is the <code>CamelContext</code>, which is in control of the lifecycle of the routes and messages running on it. A <code>CamelContext</code> can be started/suspended/resumed/stopped, and it provides a number of configuration tweaks, e.g. to handle the underlying <code>ExecutorService</code>.
+A <code>CamelContext</code> can manage many <em>routes</em>, which represent processing paths for <em>messages</em>.</p>
+<h4 id="routebuilder"><code>RouteBuilder</code></h4>
+<p>A <code>Route</code> is a description of the processing steps a message can encounter. A route starts from a <em>consumer</em> endpoint that consumes messages and processes them, and can end to a <em>producer</em> endpoint if the messages must result in an outcome of some type (e.g. a call to a webservice, or a message on a JMS queue). The standard way to create a <code>Route</code> in Camel is to inject a <code>RouteBuilder</code> in the <code>CamelContext</code> and override its <code>define()</code> method.
+The <code>RouteBuilder</code> class provides the Camel DSL which makes the implementation of EIP straightforward. We will see later a few examples of routes.</p>
+<h4 id="endpoint"><code>Endpoint</code></h4>
+<p>A <code>Route</code> could not process messages without a source of these messages, which is a <em>consumer</em> endpoint, and without a destination to which messages can be delivered after being processed, a <em>producer</em> endpoint. The concept of <em>endpoint</em> is itself an EIP <a href="http://www.enterpriseintegrationpatterns.com/MessageEndpoint.html">http://www.enterpriseintegrationpatterns.com/MessageEndpoint.html</a> and it is a cornerstone of the Camel solution to the integration problem: regardless of the nature of the producer or consumer endpoint, the intermediate steps deal with a message that have a standard structure and is in general agnostic about the nature of the source or destination of the message. The processing steps along the route deal with the same type of message, whether it came to the route through a webservice exposed by the route, or because it has been delivered as a file on a directory the route is listening to. The webservice, or the file listening service in this case, are different implementations of a <em>consuming</em> endpoint.</p>
+<h4 id="exchange"><code>Exchange</code></h4>
+<p>Endpoints can produce or consume <code>Exchange</code>s. An <code>Exchange</code> is structured in an IN and an OUT message. When dealing with a <em>consumer endpoint</em>, we can see it as a source of <code>Exchange</code>s with IN message. The processing steps along the route can modify the IN message and ultimately populate the OUT message that is used by the consumer endpoint as a response (imagine the IN/OUT pattern as a mapping of the Request/Response pattern)</p>
+<h4 id="message"><code>Message</code></h4>
+<p>The IN/OUT <code>Message</code>s in the exchange have a standard structure, being constituted of header, body and attachments. The processing steps can read or modify freely each of these parts, being all these mutable structures.</p>
+<h4 id="producertemplate"><code>ProducerTemplate</code></h4>
+<p>In testing scenarios, or in situations where messages are not consumed from a Camel endpoint, you might want to create an Exchange and send it to an endpoint. This can happen e.g. when you are integrating Camel in an existing web  application, and you want to use it to handle only one part of the request/response cycle, delegating the final handling to the existing framework (e.g. to a Spring Controller). Moreover, you want to be completely sure of not ending up in thread safety problems.
+For these cases the <code>CamelContext</code> provides with an instance of <code>ProducerTemplate</code> which allows to ultimately synthesize on the flight an <code>Exchange</code> and send it to an endpoint, all in a <em>thread safe manner</em>. <code>ProducerTemplate</code> provides a number of methods to build an <code>Exchange</code>.</p>
+<h3 id="conclusions">Conclusions</h3>
+<p>In this post we just scraped the surface of Camel, and there is a lot more to discover. I will try in future posts to dive further into features of Camel that I find particularly interesting, e.g. the testing support, parallel processing features, integration with Akka.</p>
+<p>The way the Camel DSL is structured provides a way to write code in linear manner, making it easier to reason about, and even <em>visualize it</em> (through the DSL and through HawtIO which we will explore later), and it tackles the problems of modularity of an application. For example we could just split any processing flow in subroutes and replace only those when necessary, provided the structure of the <code>Exchange</code> up and downstream is preserverd. This also fits perfectly with the need of distributing work in a team without risking of stepping in each others&rsquo; toes. If we consider also that a very natural way of deploying routes is through OSGi bundles (this is the principle followed in  <a href="http://www.jboss.org/products/fuse/overview">JBoss Fuse</a>), we can see how allowing modularity is one of the core principles at the base of this project, and it has definitely been achieved.</p>
+
+
+      
+    </article>
+    
+  </div>
+
+        </div><footer>
+  <div class="container">
+    <p class="credits copyright">
+      <p class="credits theme-by">
+        
+        
+        
+        <a href="http://localhost:1313/">Pierangelo Cecchetto</a>,
+        
+        &copy;
+        2020
+        <a href="http://localhost:1313/about/"></a>
+      </p>
+  </div>
+</footer></body>
+</html>

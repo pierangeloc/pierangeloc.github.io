@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en-us"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<meta charset="utf-8" />
+
+  <title>Referential Transparency - Pierangelo Cecchetto</title>
+
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+
+<link rel="stylesheet" href="http://localhost:1313/css/latex.css" />
+<link rel="stylesheet" href="http://localhost:1313/css/main.css" />
+<script id="MathJax-script" async src="http://localhost:1313/js/tex-mml-chtml.js"></script>
+</head>
+<body class="latex-dark-auto">
+
+
+
+
+
+
+<header>
+  <nav class="navbar">
+  <div class="nav">
+    
+
+    <ul class="nav-links">
+      
+    </ul>
+  </div>
+</nav>
+  <div class="intro-header">
+    <div class="container">
+      <div class="post-heading">
+        
+          <h1>Referential Transparency</h1>
+          
+        
+      </div>
+    </div>
+  </div>
+</header>
+<div id="content">
+  <div class="container" role="main">
+    <article class="article" class="blog-post">
+      <div class="postmeta">
+        <span class="meta-post">
+  <i class="fa fa-calendar-alt"></i>
+  Jun 1, 2018
+  
+</span>
+      </div>
+      <br>
+      
+    <p>On the benefits and consequences of Referential Transparency</p>
+<p>One foundation of Functional Programming is Referential Transparency (RT). Purely functional languages (like Haskell), and purely functional libraries for non purely functional languages (like scalaz or cats for Scala) aim at building Referential Transparent programs.
+The benefit of this constraint might not be immediately visible, so in this post I want to expose my thoughts on this, and see what Referential Transparency can buy us.</p>
+<h1 id="reasoning-and-modeling">Reasoning and modeling</h1>
+<p>The benefit of RT is that it allows us to focus on something we can handle in our head, draw some conclusions, and drag this conclusion in a different context where we focus again.
+In this different context we don&rsquo;t need to think about the whole process that allowed us to reach our conclusion, as we can just take this conclusion as a given and proceed further with our reasoning.</p>
+<p>For example, when we study calculus we define what a limit of a function \(f(x)\) in a point \(x_0\) is. Then we define the derivative of a function in \(x_0\) as \(f\):</p>
+<p>$$ \frac{d f}{dx}(x_0) = \lim_{x \rightarrow x_0} \frac{f(x)- f(x_0)}{x - x_0} $$</p>
+<p>In physics this brings to the definition of velocity of a point moving in a line under a motion \(x(t)\) as</p>
+<p>$$ v(t) = \frac{d x}{d t} $$</p>
+<p>We can then calculate the kinetic energy of an object of mass \(m\) as</p>
+<p>$$ E_k = \frac{1}{2}mv^2 $$</p>
+<p>Now, when we want to calculate the kinetic energy of a ball of a given mass at a given speed, what we do is just replacing known values in place of the variables of our definition, and we are done.
+We don&rsquo;t have to think, to calculate the energy, how the velocity has been calculated, in principle we don&rsquo;t even need to be aware of the notion of limit.
+A person that knows how to add and multiply can easily calculate the kinetic energy of a baseball ball at a given speed without any knowledge of calculus.</p>
+<p>On the other hand, we could unfold \(v\) to its definition and still we would get to a correct result:</p>
+<p>$$ E_k = \frac{1}{2}m\Big(\frac{d x}{d t}\Big )^2 $$</p>
+<p>Being able to replace definitions into variables and viceversa, allows us to simplify our reasoning and limit or broaden the scope of deductions.</p>
+<h1 id="referential-transparency">Referential Transparency</h1>
+<p>Referential transparency is exactly what we just exposed. A definition is RT if we can exchange reference for definition without mutating the effect of my reasoning.</p>
+<p>When we write a program, we describe a process that performs some logical steps.
+The approach of functional programming is to model the program in terms of mathematical functions and expressions, so that we can apply reductions or expansions in our reasoning,
+making our implementation more robust from the logical point of view.
+Let&rsquo;s see how we can apply this in Scala.</p>
+<h2 id="pure-functions">Pure functions</h2>
+<p>A function that adheres to the RT rule <code>f: A =&gt; B</code> takes a value <code>a: A</code>, produces a <code>b: B</code>, and <em>does nothing else</em>.</p>
+<p>This brings along a few <em>advantages</em>:</p>
+<ul>
+<li>We can reason <em>locally</em> about our code. When implementing the function, I can just think about how to transform <code>a: A</code> into a <code>b: B</code>.
+When using the result of the computation of <code>f</code> into another piece of code, I can just focus on the value <code>B</code> without having to think about the context that <code>b</code> might carry along,
+because <em>there is no context</em>.</li>
+<li>We can <em>prove</em> behaviors, and establish explicit <em>laws</em> that our behaviors must adhere to</li>
+<li>Testing becomes easier as there is no need to setup any context</li>
+</ul>
+<h2 id="breaking-rt-mutable-state">Breaking RT: mutable state</h2>
+<p>In Maths when we write \(x = 1\) it means that the value assigned to \(x\) is \(1\) and it will not change.
+Also, for any function \(f(x)\), for any given input we will have always the same output, on multiple computations.</p>
+<p>Scala is a hybrid language, in that it allows to do FP, but we can mix in non-functional code, so if e.g. we want to model an <code>Account</code> object we could do</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">case</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#66d9ef">var</span> balance<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">BigDecimal</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#66d9ef">def</span> debit<span style="color:#f92672">(</span>value<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">BigDecimal</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>     <span style="color:#66d9ef">this</span><span style="color:#f92672">.</span>balance <span style="color:#66d9ef">=</span> <span style="color:#66d9ef">this</span><span style="color:#f92672">.</span>balance <span style="color:#f92672">-</span> value
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>     <span style="color:#66d9ef">this</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#66d9ef">def</span> credit<span style="color:#f92672">(</span>value<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">BigDecimal</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>       <span style="color:#66d9ef">this</span><span style="color:#f92672">.</span>balance <span style="color:#66d9ef">=</span> <span style="color:#66d9ef">this</span><span style="color:#f92672">.</span>balance <span style="color:#f92672">+</span> value
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>       <span style="color:#66d9ef">this</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>     <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span> <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>defined <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Account</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> openAccount <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1000</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>openAccount<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1000</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> openAccount<span style="color:#f92672">.</span>debit<span style="color:#f92672">(</span><span style="color:#ae81ff">10</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>res0<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#ae81ff">990</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> openAccount<span style="color:#f92672">.</span>debit<span style="color:#f92672">(</span><span style="color:#ae81ff">10</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>res1<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#ae81ff">980</span><span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>and we can see that invoking our function <code>debit</code> with the same input, we have 2 different outputs.
+The reason is that the computation carries along a context change due to the <code>var</code> we used in our case class.</p>
+<p>This approach has a few drawbacks:</p>
+<ul>
+<li>It is more difficult to reason about, due to the context mutation</li>
+<li>It can yield errors in a concurrent situation, where multiple threads can call <code>debit</code></li>
+</ul>
+<p>A pure functional version of this doesn&rsquo;t mutate anything in place, but rather produces a new object for every computation.
+The object returned by our function is structurally identical every time we compute it.
+In principle our computation could cache these values and return exactly the same instance for repeated invocations.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">case</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span>balance<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">BigDecimal</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>defined <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Account</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">def</span> debit<span style="color:#f92672">(</span>account<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span><span style="color:#f92672">,</span> amt<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">BigDecimal</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span> <span style="color:#f92672">=</span> account<span style="color:#f92672">.</span>copy<span style="color:#f92672">(</span>balance <span style="color:#66d9ef">=</span> account<span style="color:#f92672">.</span>balance <span style="color:#f92672">-</span> amt<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>debit<span style="color:#66d9ef">:</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">account:</span> <span style="color:#66d9ef">Account</span><span style="color:#f92672">,</span> <span style="color:#66d9ef">amt:</span> <span style="color:#66d9ef">BigDecimal</span><span style="color:#f92672">)</span><span style="color:#a6e22e">Account</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> myAccount <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1000</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>myAccount<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1000</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> debit<span style="color:#f92672">(</span>myAccount<span style="color:#f92672">,</span> <span style="color:#ae81ff">100</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>res2<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#ae81ff">900</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> debit<span style="color:#f92672">(</span>myAccount<span style="color:#f92672">,</span> <span style="color:#ae81ff">100</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>res3<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Account</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#ae81ff">900</span><span style="color:#f92672">)</span>
+</span></span></code></pre></div><h2 id="breaking-rt-exceptions">Breaking RT: Exceptions</h2>
+<p>When we define a function <code>f: A =&gt; B</code>, we expect this function to return an output <code>b: B</code> for every input <code>a: A</code>.
+If in the implementation of <code>f</code> we introduce a <code>throw</code> or an <code>assert</code>, or rely on <code>null</code>, we end up with our computation breaking the contract we established when we defined <code>f</code>.
+The behavior of code throwing exceptions is not Referentially Transparent, as you can see from the following example</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">case</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span>name<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">,</span> balance<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   require<span style="color:#f92672">(</span>name<span style="color:#f92672">.</span>length <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">20</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;Account name cannot contain more than 20 chars&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span> <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>defined <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Account</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Very very very personal&#34;</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">100</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>java<span style="color:#f92672">.</span>lang<span style="color:#f92672">.</span><span style="color:#a6e22e">IllegalArgumentException</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">requirement</span> <span style="color:#66d9ef">failed:</span> <span style="color:#66d9ef">Account</span> <span style="color:#66d9ef">name</span> <span style="color:#66d9ef">cannot</span> <span style="color:#66d9ef">contain</span> <span style="color:#66d9ef">more</span> <span style="color:#66d9ef">than</span> <span style="color:#960050;background-color:#1e0010">20</span> <span style="color:#66d9ef">chars</span>
+</span></span><span style="display:flex;"><span>  at scala<span style="color:#f92672">.</span><span style="color:#a6e22e">Predef</span>$<span style="color:#f92672">.</span>require<span style="color:#f92672">(</span><span style="color:#a6e22e">Predef</span><span style="color:#f92672">.</span>scala<span style="color:#66d9ef">:</span><span style="color:#960050;background-color:#1e0010">293</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">...</span> <span style="color:#ae81ff">45</span> elided
+</span></span></code></pre></div><p>The <code>Account</code> creation can throw an exception. Now let&rsquo;s consider this implementation that relies on account creation</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">def</span> wealthyAccountFromDb<span style="color:#f92672">(</span>nameColumn<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">,</span> balanceColumn<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Account</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#66d9ef">val</span> acct <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span>nameColumn<span style="color:#f92672">,</span> balanceColumn<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#66d9ef">try</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>     <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>balanceColumn <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1000</span><span style="color:#f92672">)</span> <span style="color:#a6e22e">Some</span><span style="color:#f92672">(</span>acct<span style="color:#f92672">)</span> <span style="color:#66d9ef">else</span> <span style="color:#a6e22e">None</span> 
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#f92672">}</span> <span style="color:#66d9ef">catch</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>     <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">NonFatal</span><span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">None</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span> <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>wealthyAccountFromDb<span style="color:#66d9ef">:</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">nameColumn:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">,</span> <span style="color:#66d9ef">balanceColumn:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span><span style="color:#a6e22e">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Account</span><span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> wealthyAccountFromDb<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Very very very personal&#34;</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">1500</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>java<span style="color:#f92672">.</span>lang<span style="color:#f92672">.</span><span style="color:#a6e22e">IllegalArgumentException</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">requirement</span> <span style="color:#66d9ef">failed:</span> <span style="color:#66d9ef">Account</span> <span style="color:#66d9ef">name</span> <span style="color:#66d9ef">cannot</span> <span style="color:#66d9ef">contain</span> <span style="color:#66d9ef">more</span> <span style="color:#66d9ef">than</span> <span style="color:#960050;background-color:#1e0010">20</span> <span style="color:#66d9ef">chars</span>
+</span></span><span style="display:flex;"><span>  at scala<span style="color:#f92672">.</span><span style="color:#a6e22e">Predef</span>$<span style="color:#f92672">.</span>require<span style="color:#f92672">(</span><span style="color:#a6e22e">Predef</span><span style="color:#f92672">.</span>scala<span style="color:#66d9ef">:</span><span style="color:#960050;background-color:#1e0010">293</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">...</span> <span style="color:#ae81ff">46</span> elided
+</span></span></code></pre></div><p>and let&rsquo;s compare it with the substitution of the definition of <code>acct</code> in the place where <code>acct</code> is used</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">def</span> wealthyAccountFromDb<span style="color:#f92672">(</span>nameColumn<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">,</span> balanceColumn<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Account</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#66d9ef">try</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>     <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>balanceColumn <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1000</span><span style="color:#f92672">)</span> <span style="color:#a6e22e">Some</span><span style="color:#f92672">(</span><span style="color:#a6e22e">Account</span><span style="color:#f92672">(</span>nameColumn<span style="color:#f92672">,</span> balanceColumn<span style="color:#f92672">))</span> <span style="color:#66d9ef">else</span> <span style="color:#a6e22e">None</span> 
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#f92672">}</span> <span style="color:#66d9ef">catch</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>     <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">NonFatal</span><span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">None</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span> <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>wealthyAccountFromDb<span style="color:#66d9ef">:</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">nameColumn:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">,</span> <span style="color:#66d9ef">balanceColumn:</span> <span style="color:#66d9ef">Int</span><span style="color:#f92672">)</span><span style="color:#a6e22e">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Account</span><span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> wealthyAccountFromDb<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Very very very personal&#34;</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">1500</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>res6<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Account</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">None</span>
+</span></span></code></pre></div><p>Does this yield the same result? No, so this code is not Referentially Transparent.</p>
+<p>Throwing exceptions has also a few specific drawbacks:</p>
+<ul>
+<li>It breaks totality of <code>f: A =&gt; B</code>, as exceptions could be thrown for some <code>a</code> in our domain</li>
+<li>It forces us to think, every time we invoke a function, that it might throw an exception, so it makes our style very defensive and repetitive</li>
+</ul>
+<p>The alternative is to convey the fact that some code can fail, explicitly in the output type. Use an <code>Option[B]</code> or <code>Either[E, B]</code> to express the fact that computation can fail. Rather that <code>require</code> we could rather use a <a href="https://www.cakesolutions.net/teamblogs/enforcing-invariants-in-scala-datatypes">smart constructor</a>.
+If the type is simply <code>B</code> it means that the function is total and guarantees to work and provide a <code>b :B</code>.</p>
+<h2 id="breaking-rt-scala-future">Breaking RT: Scala Future</h2>
+<p>Scala <code>scala.concurrent.Future</code> provides the way to handle asynchronous execution.
+In order for <code>Future</code> to run the basic operations, we need an <code>ExecutionContext</code> available (typically it is provided implicitly).
+When a <code>Future</code> is created, it does not only create a value, but it runs immediately on the provided <code>ExecutionContext</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">import</span> scala.concurrent.ExecutionContext.Implicits.global
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">import</span> scala.concurrent.Future
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> x <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Future</span><span style="color:#f92672">({</span>println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Future is running!&#34;</span><span style="color:#f92672">);</span> <span style="color:#e6db74">&#34;result&#34;</span><span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">Future</span> is running<span style="color:#f92672">!</span>
+</span></span><span style="display:flex;"><span>x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">scala.concurrent.Future</span><span style="color:#f92672">[</span><span style="color:#66d9ef">String</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Future</span><span style="color:#f92672">(</span><span style="color:#a6e22e">Success</span><span style="color:#f92672">(</span>result<span style="color:#f92672">))</span>
+</span></span></code></pre></div><p>The fact that <code>Future</code> executes eagerly as soon as it is created, is a violation of RT, as you can see from this simple case</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> x <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Future</span><span style="color:#f92672">({</span>println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;running&#34;</span><span style="color:#f92672">);</span> <span style="color:#e6db74">&#34;result&#34;</span><span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>running
+</span></span><span style="display:flex;"><span>x<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">scala.concurrent.Future</span><span style="color:#f92672">[</span><span style="color:#66d9ef">String</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Future</span><span style="color:#f92672">(</span><span style="color:#a6e22e">Success</span><span style="color:#f92672">(</span>result<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> x flatMap<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span> <span style="color:#66d9ef">=&gt;</span> x<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>res7<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">scala.concurrent.Future</span><span style="color:#f92672">[</span><span style="color:#66d9ef">String</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Future</span><span style="color:#f92672">(</span><span style="color:#a6e22e">Success</span><span style="color:#f92672">(</span>result<span style="color:#f92672">))</span>
+</span></span></code></pre></div><p>is different than</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">Future</span><span style="color:#f92672">({</span>println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;running&#34;</span><span style="color:#f92672">);</span> <span style="color:#e6db74">&#34;result&#34;</span><span style="color:#f92672">})</span> flatMap<span style="color:#f92672">{</span><span style="color:#66d9ef">_</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Future</span><span style="color:#f92672">({</span>println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;running&#34;</span><span style="color:#f92672">);</span> <span style="color:#e6db74">&#34;result&#34;</span><span style="color:#f92672">})}</span>
+</span></span><span style="display:flex;"><span>running
+</span></span><span style="display:flex;"><span>running
+</span></span><span style="display:flex;"><span>res8<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">scala.concurrent.Future</span><span style="color:#f92672">[</span><span style="color:#66d9ef">String</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Future</span><span style="color:#f92672">(&lt;</span>not completed<span style="color:#f92672">&gt;)</span>
+</span></span></code></pre></div><p>because one never prints <code>&quot;running&quot;</code> (as it was printed when we created the <code>Future</code> in first place), another one prints it twice.</p>
+<p>Alternative libraries such as Monix, cats-effects or scalaz8 provide alternatives to <code>Future</code> that separate declaration from execution, giving us back RT.</p>
+<p>Let&rsquo;s do the same as above with Monix <code>Task</code>.
+Defining a <code>Task</code> just creates a value that describes how things will be executed, it doesn&rsquo;t trigger any execution.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">import</span> monix.execution.Scheduler.Implicits.global
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">import</span> monix.execution.Scheduler.Implicits.global
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">import</span> monix.eval.Task
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">import</span> monix.eval.Task
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> task <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Task</span><span style="color:#f92672">({</span>println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Task is running!&#34;</span><span style="color:#f92672">);</span> <span style="color:#e6db74">&#34;result&#34;</span><span style="color:#f92672">})</span>
+</span></span><span style="display:flex;"><span>task<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">monix.eval.Task</span><span style="color:#f92672">[</span><span style="color:#66d9ef">String</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Task</span><span style="color:#f92672">.</span><span style="color:#a6e22e">FlatMap$1855446670</span>
+</span></span></code></pre></div><p>Execution must be explicitly invoked <em>at the end of the world</em></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> task<span style="color:#f92672">.</span>runAsync<span style="color:#f92672">.</span>foreach<span style="color:#f92672">(</span>println<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">Task</span> is running<span style="color:#f92672">!</span>
+</span></span><span style="display:flex;"><span>result
+</span></span></code></pre></div><p>Now let&rsquo;s verify that this property guarantees RT</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> t1 <span style="color:#66d9ef">=</span> task flatMap<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span> <span style="color:#66d9ef">=&gt;</span> task<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>t1<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">monix.eval.Task</span><span style="color:#f92672">[</span><span style="color:#66d9ef">String</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Task</span><span style="color:#f92672">.</span><span style="color:#a6e22e">FlatMap$1362502256</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> t2 <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Task</span><span style="color:#f92672">({</span>println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Task is running!&#34;</span><span style="color:#f92672">);</span> <span style="color:#e6db74">&#34;result&#34;</span><span style="color:#f92672">})</span> flatMap <span style="color:#f92672">{</span><span style="color:#66d9ef">_</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Task</span><span style="color:#f92672">({</span>println<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Task is running!&#34;</span><span style="color:#f92672">);</span> <span style="color:#e6db74">&#34;result&#34;</span><span style="color:#f92672">})}</span>
+</span></span><span style="display:flex;"><span>t2<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">monix.eval.Task</span><span style="color:#f92672">[</span><span style="color:#66d9ef">String</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Task</span><span style="color:#f92672">.</span><span style="color:#a6e22e">FlatMap$446650376</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> t1<span style="color:#f92672">.</span>runAsync<span style="color:#f92672">.</span>foreach<span style="color:#f92672">(</span>println<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">Task</span> is running<span style="color:#f92672">!</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">Task</span> is running<span style="color:#f92672">!</span>
+</span></span><span style="display:flex;"><span>result
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> t2<span style="color:#f92672">.</span>runAsync<span style="color:#f92672">.</span>foreach<span style="color:#f92672">(</span>println<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">Task</span> is running<span style="color:#f92672">!</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">Task</span> is running<span style="color:#f92672">!</span>
+</span></span><span style="display:flex;"><span>result
+</span></span></code></pre></div><p>As you can see <code>t1</code> and <code>t2</code> produce the same result, so they respect RT.</p>
+<h2 id="laws-and-referential-transparency">Laws and Referential Transparency</h2>
+<p>When we define an abstraction in FP (typically by means of a typeclass), we provide also the laws that this abstraction must abide to.</p>
+<p>For example, for every (covariant) <code>Functor</code> it is required that it respects the <em>composition law</em>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>fa<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>f<span style="color:#f92672">).</span>map<span style="color:#f92672">(</span>g<span style="color:#f92672">)</span> <span style="color:#f92672">&lt;-&gt;</span> fa<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>f andThen g<span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>It is pretty obvious that this law makes sense only as long as <code>f</code> and <code>g</code> are referentially transparent.</p>
+<p>If e.g. <code>fa</code> is a <code>List[A]</code>, the <code>map</code> function could be defined considering the recursive nature of the List ADT:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> map<span style="color:#f92672">[</span><span style="color:#66d9ef">A</span>, <span style="color:#66d9ef">B</span><span style="color:#f92672">](</span>xs<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">A</span><span style="color:#f92672">])(</span>f<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">A</span> <span style="color:#f92672">=&gt;</span> B<span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">B</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> xs <span style="color:#66d9ef">match</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">Nil</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Nil</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">case</span> x <span style="color:#66d9ef">:</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">xs</span> <span style="color:#f92672">=&gt;</span> f<span style="color:#f92672">(</span>x<span style="color:#f92672">)</span> <span style="color:#66d9ef">:</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">map</span><span style="color:#f92672">(</span><span style="color:#66d9ef">xs</span><span style="color:#f92672">)(</span><span style="color:#66d9ef">f</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>By inspecting this simple definition, it is apparent that the functor law can hold only as long as executions of <code>f</code> on previous elements of the list don&rsquo;t influence execution on subsequent elements. Clearly shared mutable state breaks this condition.</p>
+<p>Let&rsquo;s prove this with a simple example</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">var</span> state <span style="color:#66d9ef">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>state<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> add<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span> <span style="color:#f92672">=&gt;</span> <span style="color:#a6e22e">Int</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Int</span> <span style="color:#66d9ef">=</span> x <span style="color:#66d9ef">=&gt;</span> y <span style="color:#66d9ef">=&gt;</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   state <span style="color:#66d9ef">=</span> state <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span>   x <span style="color:#f92672">+</span> y <span style="color:#f92672">+</span> state
+</span></span><span style="display:flex;"><span>     <span style="color:#f92672">|</span> <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>add<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span> <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">(</span><span style="color:#a6e22e">Int</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Int</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">$$Lambda$15566</span><span style="color:#f92672">/</span><span style="color:#ae81ff">1963356770</span><span style="color:#a6e22e">@abe0b99</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> xs <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span><span style="color:#ae81ff">2</span><span style="color:#f92672">,</span><span style="color:#ae81ff">3</span><span style="color:#f92672">,</span><span style="color:#ae81ff">4</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>xs<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">3</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">4</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> xs<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>add<span style="color:#f92672">(</span><span style="color:#ae81ff">4</span><span style="color:#f92672">)).</span>map<span style="color:#f92672">(</span>add<span style="color:#f92672">(</span><span style="color:#ae81ff">5</span><span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>res0<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">16</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">19</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">22</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">25</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> state <span style="color:#66d9ef">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>state<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> xs <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span><span style="color:#ae81ff">2</span><span style="color:#f92672">,</span><span style="color:#ae81ff">3</span><span style="color:#f92672">,</span><span style="color:#ae81ff">4</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>xs<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">1</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">3</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">4</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> xs<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>add<span style="color:#f92672">(</span><span style="color:#ae81ff">4</span><span style="color:#f92672">)</span> andThen add<span style="color:#f92672">(</span><span style="color:#ae81ff">5</span><span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>res1<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">13</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">18</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">23</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">28</span><span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>We can see that the 2 executions provide different results, even if we reset the state between one execution and the next one.</p>
+<p>A simple pure version is instead a law abiding citizes of the functional world</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">val</span> add<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span> <span style="color:#f92672">=&gt;</span> <span style="color:#a6e22e">Int</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Int</span> <span style="color:#66d9ef">=</span> x <span style="color:#66d9ef">=&gt;</span> y <span style="color:#66d9ef">=&gt;</span> x <span style="color:#f92672">+</span> y
+</span></span><span style="display:flex;"><span>add<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">Int</span> <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">(</span><span style="color:#a6e22e">Int</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Int</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">$$Lambda$10651</span><span style="color:#f92672">/</span><span style="color:#ae81ff">883633605</span><span style="color:#66d9ef">@</span><span style="color:#ae81ff">50</span>b6ae4e
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> xs<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>add<span style="color:#f92672">(</span><span style="color:#ae81ff">4</span><span style="color:#f92672">)).</span>map<span style="color:#f92672">(</span>add<span style="color:#f92672">(</span><span style="color:#ae81ff">5</span><span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>res2<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">10</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">11</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">12</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">13</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>scala<span style="color:#f92672">&gt;</span> xs<span style="color:#f92672">.</span>map<span style="color:#f92672">(</span>add<span style="color:#f92672">(</span><span style="color:#ae81ff">4</span><span style="color:#f92672">)</span> andThen add<span style="color:#f92672">(</span><span style="color:#ae81ff">5</span><span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>res3<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">List</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Int</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">List</span><span style="color:#f92672">(</span><span style="color:#ae81ff">10</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">11</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">12</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">13</span><span style="color:#f92672">)</span>
+</span></span></code></pre></div><h1 id="conclusions">Conclusions</h1>
+<p>I hope the examples exposed above give a good idea of the benefits of Referential Transparency.</p>
+<p>The same concepts we have explored here apply when we develop our business application, when we are dealing with a DB call, or building an object out of a DB row, or performing a call to an API.</p>
+<p>What we want to do is to apply one of the principles of Functional programming, i.e. being pure, rigorous and explicit about expectations and guarantees. This allows us to <em>think in the little</em> to <em>compose in the big</em> context, without juggling with too many concepts in our head. Remember that <a href="https://www.youtube.com/watch?v=GqmsQeSzMdw">Constraints Liberate, Liberties Constrain</a>.</p>
+<p>RT plays a fundamental role in this and by using it we make our code easier to reason about, improving its maintainability and becoming ultimately more productive as developers.</p>
+
+
+      
+    </article>
+    
+  </div>
+
+        </div><footer>
+  <div class="container">
+    <p class="credits copyright">
+      <p class="credits theme-by">
+        
+        
+        
+        <a href="http://localhost:1313/">Pierangelo Cecchetto</a>,
+        
+        &copy;
+        2020
+        <a href="http://localhost:1313/about/"></a>
+      </p>
+  </div>
+</footer></body>
+</html>

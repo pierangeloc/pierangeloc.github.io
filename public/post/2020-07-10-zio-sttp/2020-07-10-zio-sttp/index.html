@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en-us"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<meta charset="utf-8" />
+
+  <title>Mocking endpoints with ZIO sttp - Pierangelo Cecchetto</title>
+
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+
+<link rel="stylesheet" href="http://localhost:1313/css/latex.css" />
+<link rel="stylesheet" href="http://localhost:1313/css/main.css" />
+<script id="MathJax-script" async src="http://localhost:1313/js/tex-mml-chtml.js"></script>
+</head>
+<body class="latex-dark-auto">
+
+
+
+
+
+
+<header>
+  <nav class="navbar">
+  <div class="nav">
+    
+
+    <ul class="nav-links">
+      
+    </ul>
+  </div>
+</nav>
+  <div class="intro-header">
+    <div class="container">
+      <div class="post-heading">
+        
+          <h1>Mocking endpoints with ZIO sttp</h1>
+          
+        
+      </div>
+    </div>
+  </div>
+</header>
+<div id="content">
+  <div class="container" role="main">
+    <article class="article" class="blog-post">
+      <div class="postmeta">
+        <span class="meta-post">
+  <i class="fa fa-calendar-alt"></i>
+  Jul 10, 2020
+  
+</span>
+      </div>
+      <br>
+      
+    <p>How to use ZIO modules together with STTP</p>
+<p>In this post I want to give a simple example of how to use ZIO modules together with STTP. We will see how to wire different components together and in particular how to unit test the http layer. I assume basic ZIO concepts such as environment, layer, error and ZIO aliases (<code>RIO</code>, <code>UIO</code> etc) are already known to the reader, who can refer to ZIO documentation for further details. The code used along this article is available <a href="https://github.com/pierangeloc/blog-zio-sttp">here</a>.</p>
+<p>Our client is working on a marketing campaign. Colleagues from marketing department prepared a list of <code>CustomerId</code>, and we are tasked to send each user an email with a promotion for the hot product of our catalogue. The user information is stored in a CRM application that exposes a REST api.</p>
+<p>To implement this, for each <code>CustomerId</code> we need to:</p>
+<ul>
+<li>lookup for the customer in the CRM</li>
+<li>if customer exists and permission has been granted, send the email</li>
+<li>otherwise just write a log message</li>
+</ul>
+<h3 id="the-crm-application">The CRM application</h3>
+<p>We have a simple implementation of the CRM api we want to use, i.e. an endpoint to fetch a user given a <code>userId</code>. You can run a trivial implementation of such an application with <code>sbt runMain io.tuliplogic.CRMApp</code>. Let&rsquo;s test the endpoint with <a href="https://httpie.org/">httpPie</a>:</p>
+<pre tabindex="0"><code>http http://localhost:8080/users/123123
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 73
+Content-Type: text/plain
+Date: Sat, 11 Jul 2020 14:25:19 GMT
+
+{
+    &#34;email&#34;: &#34;weierstrass@maths.com&#34;,
+    &#34;promotionOptIn&#34;: true,
+    &#34;userId&#34;: &#34;123123&#34;
+}
+</code></pre><p>If a user is not found in CRM, the service returns a 404 with emtpy body instead.</p>
+<h3 id="the-campaign">The campaign</h3>
+<p>Our campaign program is given a <code>val customerIds: List[CustomerId]</code> and a simple function to send email <code>def sendEmail(email: Email): URIO[Console, Unit] = ???</code>. We will focus on the service responsible for retrieving customer information. Writing a module that exposes such a functionality is pretty straightforward:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#66d9ef">CustomerDataService</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Has</span><span style="color:#f92672">[</span><span style="color:#66d9ef">CustomerDataService.Service</span><span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">object</span> <span style="color:#a6e22e">CustomerBaseService</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">trait</span> <span style="color:#a6e22e">Service</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> getCustomer<span style="color:#f92672">(</span>customerId<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">CustomerId</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">IO</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Error</span>, <span style="color:#66d9ef">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Customer</span><span style="color:#f92672">]]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">def</span> getCustomer<span style="color:#f92672">(</span>customerId<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">CustomerId</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">ZIO</span><span style="color:#f92672">[</span><span style="color:#66d9ef">CustomerBaseService</span>, <span style="color:#66d9ef">Error</span>, <span style="color:#66d9ef">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Customer</span><span style="color:#f92672">]]</span> <span style="color:#66d9ef">=</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ZIO</span><span style="color:#f92672">.</span>accessM<span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">.</span>get<span style="color:#f92672">.</span>getCustomer<span style="color:#f92672">(</span>customerId<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>Based solely on the shape of our interface (we didn&rsquo;t bother yet thinking about the concrete implementation), we can write the campaign program as</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">val</span> program<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">ZIO</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Console</span> <span style="color:#66d9ef">with</span> <span style="color:#66d9ef">CustomerDataService</span>, <span style="color:#66d9ef">CustomerDataService.Error</span>, <span style="color:#66d9ef">Unit</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">ZIO</span><span style="color:#f92672">.</span>foreach<span style="color:#f92672">(</span>customerIds<span style="color:#f92672">)</span> <span style="color:#f92672">{</span> customerId <span style="color:#66d9ef">=&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CustomerDataService</span><span style="color:#f92672">.</span>getCustomer<span style="color:#f92672">(</span>customerId<span style="color:#f92672">).</span>flatMap <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">_</span><span style="color:#f92672">.</span>fold<span style="color:#f92672">(</span>console<span style="color:#f92672">.</span>putStrLn<span style="color:#f92672">(</span><span style="color:#e6db74">s&#34;Customer </span><span style="color:#e6db74">$customerId</span><span style="color:#e6db74"> not found&#34;</span><span style="color:#f92672">))(</span> cust <span style="color:#66d9ef">=&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>cust<span style="color:#f92672">.</span>promotionOptIn<span style="color:#f92672">)</span> sendEmail<span style="color:#f92672">(</span>cust<span style="color:#f92672">.</span>email<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span> console<span style="color:#f92672">.</span>putStrLn<span style="color:#f92672">(</span><span style="color:#e6db74">s&#34;Not sending email to </span><span style="color:#e6db74">$customerId</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">}.</span>unit
+</span></span></code></pre></div><p>The type of <code>program</code> tells us it requires <code>Console with CustomerDataService</code>, <code>Console</code> being provided by <code>ZEnv</code> and <code>CustomerDataService</code> must be provided by us.</p>
+<p>A <code>live</code> implementation of <code>CustomerDataService</code> layer must perform an http call to our CRM (configurable) endpoint, therefore it depends on a horizontal composition of a <code>Config</code> layer that provides the base url and port, together with <code>SttpClient</code> layer provided by <a href="https://sttp.softwaremill.com/en/latest/backends/zio.html"><strong>sttp-zio</strong></a>. In order to parse the response properly, we use <a href="https://sttp.softwaremill.com/en/latest/json.html#circe"><strong>sttp-circe</strong></a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">val</span> live<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">URLayer</span><span style="color:#f92672">[</span><span style="color:#66d9ef">SttpClient</span> <span style="color:#66d9ef">with</span> <span style="color:#66d9ef">Config</span>, <span style="color:#66d9ef">CustomerDataService</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">ZLayer</span><span style="color:#f92672">.</span>fromServiceM<span style="color:#f92672">[</span><span style="color:#66d9ef">io.tuliplogic.Config</span>, <span style="color:#66d9ef">SttpClient</span>, <span style="color:#66d9ef">Nothing</span>, <span style="color:#66d9ef">Service</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span> config <span style="color:#66d9ef">=&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ZIO</span><span style="color:#f92672">.</span>fromFunction<span style="color:#f92672">[</span><span style="color:#66d9ef">SttpClient</span>, <span style="color:#66d9ef">Service</span><span style="color:#f92672">]</span> <span style="color:#f92672">{</span> sttpClient <span style="color:#66d9ef">=&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">Service</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">def</span> getCustomer<span style="color:#f92672">(</span>customerId<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">CustomerId</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">IO</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Error</span>, <span style="color:#66d9ef">Option</span><span style="color:#f92672">[</span><span style="color:#66d9ef">Customer</span><span style="color:#f92672">]]</span> <span style="color:#66d9ef">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">val</span> request <span style="color:#66d9ef">=</span> basicRequest
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">.</span>get<span style="color:#f92672">(</span>uri<span style="color:#e6db74">&#34;${config.baseUrl}:${config.port}/customers/${customerId.value}&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">.</span>response<span style="color:#f92672">(</span>asJson<span style="color:#f92672">[</span><span style="color:#66d9ef">Customer</span><span style="color:#f92672">])</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>              resp <span style="color:#66d9ef">&lt;-</span> <span style="color:#a6e22e">SttpClient</span><span style="color:#f92672">.</span>send<span style="color:#f92672">(</span>request<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">.</span>mapError<span style="color:#f92672">(</span>t <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">Error</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Connection Error&#34;</span><span style="color:#f92672">,</span> t<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>              res <span style="color:#66d9ef">&lt;-</span> <span style="color:#f92672">(</span>resp<span style="color:#f92672">.</span>code<span style="color:#f92672">,</span> resp<span style="color:#f92672">.</span>body<span style="color:#f92672">)</span> <span style="color:#66d9ef">match</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">case</span> <span style="color:#f92672">(</span><span style="color:#a6e22e">StatusCode</span><span style="color:#f92672">.</span><span style="color:#a6e22e">NotFound</span><span style="color:#f92672">,</span> <span style="color:#66d9ef">_</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">ZIO</span><span style="color:#f92672">.</span>none
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">case</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">,</span> <span style="color:#a6e22e">Right</span><span style="color:#f92672">(</span>customer<span style="color:#f92672">))</span>         <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">ZIO</span><span style="color:#f92672">.</span>some<span style="color:#f92672">(</span>customer<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">case</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">_</span><span style="color:#f92672">,</span> <span style="color:#a6e22e">Left</span><span style="color:#f92672">(</span>e<span style="color:#f92672">))</span>             <span style="color:#66d9ef">=&gt;</span> <span style="color:#a6e22e">ZIO</span><span style="color:#f92672">.</span>fail<span style="color:#f92672">(</span><span style="color:#a6e22e">Error</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;API error&#34;</span><span style="color:#f92672">,</span> e<span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">}</span> <span style="color:#66d9ef">yield</span> res
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">).</span>provide<span style="color:#f92672">(</span>sttpClient<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">}</span>
+</span></span></code></pre></div><p><strong>sttp</strong> allows us to <em>describe</em> how we send a request and we parse the response. This description is then <em>interpreted</em> in the <code>SttpClient.send</code> that returns a <code>ZIO</code> effect. Here we are transforming the response with 404 status code into a <code>None</code>, the 200 response into a <code>Some[Customer]</code>, otherwise we fail the effect using the <code>ZIO</code> error channel.</p>
+<p>In the main program we need to satisfy the requirements of <code>program</code> using the <code>live</code> layer, after we compose the requirements horizontally with <code>++</code> and vertically with <code>&gt;&gt;&gt;</code> (see <a href="https://zio.dev/docs/howto/howto_use_layers">here</a> for further details).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>program<span style="color:#f92672">.</span>provideSomeLayer<span style="color:#f92672">[</span><span style="color:#66d9ef">Console</span><span style="color:#f92672">](</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">(</span><span style="color:#a6e22e">ZLayer</span><span style="color:#f92672">.</span>succeed<span style="color:#f92672">(</span><span style="color:#a6e22e">Config</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;http://localhost&#34;</span><span style="color:#f92672">,</span> <span style="color:#ae81ff">8080</span><span style="color:#f92672">))</span> <span style="color:#f92672">++</span> <span style="color:#a6e22e">AsyncHttpClientZioBackend</span><span style="color:#f92672">.</span>layer<span style="color:#f92672">())</span> <span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#a6e22e">CustomerDataService</span><span style="color:#f92672">.</span>live
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span></code></pre></div><h1 id="unit-testing-the-live-layer">Unit testing the <code>live</code> layer</h1>
+<p>Given how we composed the different parts of our program, we are pretty confident it will work, just it would be nice to make sure
+the http part has been implemented correctly, in <code>CustomerDataService.live</code>. In particular we want to make sure we are processing correctly the faulty situations.</p>
+<p>With <strong>sttp</strong> and <code>ZIO</code> mocking http endpoints is extremely simple. I used <code>ScalaTest</code> but a similar approach can be followed with pretty much all the testing libraries out there. The http dependency in <code>live</code> is provided by <code>SttpClient</code> layer, so to mock a situation where the CRM endpoint returns a 404 we build an sttp layer as</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">val</span> notFoundSttp<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">ULayer</span><span style="color:#f92672">[</span><span style="color:#66d9ef">SttpClient</span><span style="color:#f92672">]</span> <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">ZLayer</span><span style="color:#f92672">.</span>succeed<span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">AsyncHttpClientZioBackend</span><span style="color:#f92672">.</span>stub
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>whenRequestMatches<span style="color:#f92672">(</span>req <span style="color:#66d9ef">=&gt;</span> req<span style="color:#f92672">.</span>uri<span style="color:#f92672">.</span>toString <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;http://localhost:8080/customers/123122&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>thenRespondNotFound<span style="color:#f92672">()</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>and in the test we inject this layer as <code>SttpClient</code> and run the method under test</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#e6db74">&#34;return None when customer not found&#34;</span> in <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">TestScope</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">val</span> res <span style="color:#66d9ef">=</span> unsafeRun<span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CustomerDataService</span><span style="color:#f92672">.</span>getCustomer<span style="color:#f92672">(</span><span style="color:#a6e22e">CustomerId</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;123122&#34;</span><span style="color:#f92672">)).</span>provideLayer<span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">(</span>configLayer <span style="color:#f92672">++</span> notFoundSttp  <span style="color:#f92672">)</span> <span style="color:#f92672">&gt;&gt;&gt;</span> <span style="color:#a6e22e">CustomerDataService</span><span style="color:#f92672">.</span>live
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">).</span>either
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">val</span> expected <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Right</span><span style="color:#f92672">(</span><span style="color:#a6e22e">None</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>  res shouldEqual expected
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><h1 id="conclusion">Conclusion</h1>
+<p>Through this simple example, we saw how we can use <strong>sttp</strong> together with <code>ZIO</code> using the <code>ZLayer</code> approach, and we have shown how to
+unit test the http client without having to spin any server, by just providing a properly setup <code>SttpClient</code>.</p>
+
+
+      
+    </article>
+    
+  </div>
+
+        </div><footer>
+  <div class="container">
+    <p class="credits copyright">
+      <p class="credits theme-by">
+        
+        
+        
+        <a href="http://localhost:1313/">Pierangelo Cecchetto</a>,
+        
+        &copy;
+        2020
+        <a href="http://localhost:1313/about/"></a>
+      </p>
+  </div>
+</footer></body>
+</html>
