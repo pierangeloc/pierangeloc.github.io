@@ -2,9 +2,10 @@
 <html lang="en-us"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
 <meta charset="utf-8" />
 
-  <title>Precise rethrow - Pierangelo Cecchetto</title>
+  <title>Precise rethrow - BLOG</title>
 
 
+  <meta name="author" content="Pierangelo Cecchetto"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -13,7 +14,7 @@
 <link rel="stylesheet" href="http://localhost:1313/css/main.css" />
 <script id="MathJax-script" async src="http://localhost:1313/js/tex-mml-chtml.js"></script>
 </head>
-<body class="latex-dark-auto">
+<body>
 
 
 
@@ -61,31 +62,31 @@ In the following notes I am collecting a few points that I found at least not ob
 <p>This is a feature that has been introduced in the Java 7 compiler, and it can be expressed in this way:<br>
 <em>When rethrowing an exception, the rethrown type doesn&rsquo;t have necessarily to be of the same type declared in the <code>catch</code> block. If e.g. the <code>try</code> block can throw exceptions of type <code>E1</code>, <code>E2</code>, <code>E3</code> all subtypes of <code>E</code> which is the type in the <code>catch</code> clause, the rethrowing action is aware of being restricted to types <code>E1</code>, <code>E2</code>, <code>E3</code> and not necessarily to <code>E</code>.</em><br>
 This can be easily better explained through an example</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PreciseRethrow</span> {
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">PreciseRethrow</span> {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">rethrowException</span>(String exceptionOrdinal) <span style="color:#66d9ef">throws</span> ExceptionB, ExceptionA {
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span> {
-</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span>(exceptionOrdinal.<span style="color:#a6e22e">equals</span>(<span style="color:#e6db74">&#34;first&#34;</span>))
-</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ExceptionA();
-</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">else</span>
-</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ExceptionB();
-</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">catch</span> (Exception e) {
-</span></span><span style="display:flex;"><span>            e.<span style="color:#a6e22e">printStackTrace</span>();
-</span></span><span style="display:flex;"><span>            Exception f <span style="color:#f92672">=</span> e;
-</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">throw</span> f;
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">rethrowException</span>(String exceptionOrdinal) <span style="color:#815ba4">throws</span> ExceptionB, ExceptionA {
+</span></span><span style="display:flex;"><span>        <span style="color:#815ba4">try</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#815ba4">if</span>(exceptionOrdinal.<span style="color:#06b6ef">equals</span>(<span style="color:#48b685">&#34;first&#34;</span>))
+</span></span><span style="display:flex;"><span>                <span style="color:#815ba4">throw</span> <span style="color:#815ba4">new</span> ExceptionA();
+</span></span><span style="display:flex;"><span>            <span style="color:#815ba4">else</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#815ba4">throw</span> <span style="color:#815ba4">new</span> ExceptionB();
+</span></span><span style="display:flex;"><span>        } <span style="color:#815ba4">catch</span> (Exception e) {
+</span></span><span style="display:flex;"><span>            e.<span style="color:#06b6ef">printStackTrace</span>();
+</span></span><span style="display:flex;"><span>            Exception f <span style="color:#5bc4bf">=</span> e;
+</span></span><span style="display:flex;"><span>            <span style="color:#815ba4">throw</span> f;
 </span></span><span style="display:flex;"><span>        }
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ExceptionA</span> <span style="color:#66d9ef">extends</span> Exception {}
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ExceptionB</span> <span style="color:#66d9ef">extends</span> Exception {}
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">class</span> <span style="color:#fec418">ExceptionA</span> <span style="color:#815ba4">extends</span> Exception {}
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">class</span> <span style="color:#fec418">ExceptionB</span> <span style="color:#815ba4">extends</span> Exception {}
 </span></span></code></pre></div><p>The compiler analyzes the code in the <code>try</code> clause and detects that only <code>FirstException</code> or <code>SecondException</code> can be thrown, therefore despite the <code>catch</code> block refers to a generic <code>Exception</code> class, it is aware that the actual exception being rethrown in the <code>throw e;</code> can either be of type <code>FirstException</code> or <code>SecondException</code>, therefore the <code>rethrowException()</code> method can declare <code>throws ExceptionB, ExceptionA</code> instead of <code>throws Exception</code>.<br>
 If the exception being rethrown is copied to a variable local to the <code>catch</code> block which is in turn rethrown, like in this version of the <code>catch</code> block</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span><span style="color:#66d9ef">catch</span> (Exception e) {
-</span></span><span style="display:flex;"><span>            e.<span style="color:#a6e22e">printStackTrace</span>();
-</span></span><span style="display:flex;"><span>            Exception f <span style="color:#f92672">=</span> e;
-</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">throw</span> f;
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span><span style="color:#815ba4">catch</span> (Exception e) {
+</span></span><span style="display:flex;"><span>            e.<span style="color:#06b6ef">printStackTrace</span>();
+</span></span><span style="display:flex;"><span>            Exception f <span style="color:#5bc4bf">=</span> e;
+</span></span><span style="display:flex;"><span>            <span style="color:#815ba4">throw</span> f;
 </span></span><span style="display:flex;"><span>        }
 </span></span></code></pre></div><p>this nice behavior of the compiler ceases to occur, so it will produce a compilation error.</p>
 <hr>
@@ -103,11 +104,11 @@ If the exception being rethrown is copied to a variable local to the <code>catch
         
         
         
-        <a href="http://localhost:1313/">Pierangelo Cecchetto</a>,
+        <a href="http://localhost:1313/">BLOG</a>,
         
         &copy;
         2020
-        <a href="http://localhost:1313/about/"></a>
+        <a href="http://localhost:1313/about/">Pierangelo Cecchetto</a>
       </p>
   </div>
 </footer></body>

@@ -109,7 +109,7 @@ program.provideSomeLayer[Console](
 )
 ```
 
-# Unit testing the `live` layer
+### Unit testing the `live` layer
 
 Given how we composed the different parts of our program, we are pretty confident it will work, just it would be nice to make sure
 the http part has been implemented correctly, in `CustomerDataService.live`. In particular we want to make sure we are processing correctly the faulty situations.

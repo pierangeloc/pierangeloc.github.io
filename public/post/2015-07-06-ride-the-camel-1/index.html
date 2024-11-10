@@ -2,9 +2,10 @@
 <html lang="en-us"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
 <meta charset="utf-8" />
 
-  <title>Getting started with Apache Camel - Pierangelo Cecchetto</title>
+  <title>Getting started with Apache Camel - BLOG</title>
 
 
+  <meta name="author" content="Pierangelo Cecchetto"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -13,7 +14,7 @@
 <link rel="stylesheet" href="http://localhost:1313/css/main.css" />
 <script id="MathJax-script" async src="http://localhost:1313/js/tex-mml-chtml.js"></script>
 </head>
-<body class="latex-dark-auto">
+<body>
 
 
 
@@ -61,57 +62,57 @@
 <p>The easiest way to use Camel is to include it in your Spring context. We will use Camel 2.15.1 that provides a way to setup a Camel-based application without the need of xml configuration.</p>
 <h4 id="maven-dependencies">Maven Dependencies</h4>
 <p>First of all let&rsquo;s include the dependencies in our <code>pom.xml</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span>    <span style="color:#f92672">&lt;dependencies&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span>    <span style="color:#5bc4bf">&lt;dependencies&gt;</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;dependency&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;groupId&gt;</span>junit<span style="color:#f92672">&lt;/groupId&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;artifactId&gt;</span>junit<span style="color:#f92672">&lt;/artifactId&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;version&gt;</span>3.8.1<span style="color:#f92672">&lt;/version&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;scope&gt;</span>test<span style="color:#f92672">&lt;/scope&gt;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;groupId&gt;</span>junit<span style="color:#5bc4bf">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;artifactId&gt;</span>junit<span style="color:#5bc4bf">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;version&gt;</span>3.8.1<span style="color:#5bc4bf">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;scope&gt;</span>test<span style="color:#5bc4bf">&lt;/scope&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;/dependency&gt;</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">&lt;!-- camel --&gt;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;dependency&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.camel<span style="color:#f92672">&lt;/groupId&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;artifactId&gt;</span>camel-core<span style="color:#f92672">&lt;/artifactId&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;version&gt;</span>${camel.version}<span style="color:#f92672">&lt;/version&gt;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#776e71">&lt;!-- camel --&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;groupId&gt;</span>org.apache.camel<span style="color:#5bc4bf">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;artifactId&gt;</span>camel-core<span style="color:#5bc4bf">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;version&gt;</span>${camel.version}<span style="color:#5bc4bf">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;/dependency&gt;</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;dependency&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.camel<span style="color:#f92672">&lt;/groupId&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;artifactId&gt;</span>camel-spring<span style="color:#f92672">&lt;/artifactId&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;version&gt;</span>${camel.version}<span style="color:#f92672">&lt;/version&gt;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;groupId&gt;</span>org.apache.camel<span style="color:#5bc4bf">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;artifactId&gt;</span>camel-spring<span style="color:#5bc4bf">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;version&gt;</span>${camel.version}<span style="color:#5bc4bf">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;/dependency&gt;</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;dependency&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.camel<span style="color:#f92672">&lt;/groupId&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;artifactId&gt;</span>camel-spring-javaconfig<span style="color:#f92672">&lt;/artifactId&gt;</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&lt;version&gt;</span>${camel.version}<span style="color:#f92672">&lt;/version&gt;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;/dependency&gt;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/dependencies&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;groupId&gt;</span>org.apache.camel<span style="color:#5bc4bf">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;artifactId&gt;</span>camel-spring-javaconfig<span style="color:#5bc4bf">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#5bc4bf">&lt;version&gt;</span>${camel.version}<span style="color:#5bc4bf">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">&lt;/dependencies&gt;</span>
 </span></span></code></pre></div><p><code>camel-core</code> provides the essence of the camel infrastructure and basic components, <code>camel-spring</code> and <code>camel-spring-javaconfig</code> provide the classes and annotations that allow us to configure and run Camel within a Java-configured Spring application.</p>
 <h4 id="embed-camel-in-a-bootable-application">Embed Camel in a bootable application</h4>
 <p>The <code>org.apache.camel.spring.javaconfig.CamelConfiguration</code> abstract class can be used as a base Spring configuration class, where we can reference all the beans we might need in the standard Spring way (xml or annotations based). The additional thing that this class does is loading a <code>CamelContext</code> and injecting any bean that extends <code>RouteBuilder</code> available in the Spring context, in the <code>CamelContext</code>. More about the <code>CamelContext</code> will follow along the article.
 To give ourselves some more flexibility we will also use a standard xml Spring configuration file.</p>
 <p>The simplest configuration of such an application boils down to:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#75715e">/**
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> * We extend CamelConfiguration so we can build a Camel Context using purely annotated classes
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> *
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> */</span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@Configuration</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Boot</span> <span style="color:#66d9ef">extends</span> CamelConfiguration {
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#776e71">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#776e71"> * We extend CamelConfiguration so we can build a Camel Context using purely annotated classes
+</span></span></span><span style="display:flex;"><span><span style="color:#776e71"> *
+</span></span></span><span style="display:flex;"><span><span style="color:#776e71"> */</span>
+</span></span><span style="display:flex;"><span><span style="color:#5bc4bf">@Configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">Boot</span> <span style="color:#815ba4">extends</span> CamelConfiguration {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>( String<span style="color:#f92672">[]</span> args ) <span style="color:#66d9ef">throws</span> Exception {
-</span></span><span style="display:flex;"><span>        Main main <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Main();
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//use any route builder and components declared within this package</span>
-</span></span><span style="display:flex;"><span>        main.<span style="color:#a6e22e">setFileApplicationContextUri</span>(<span style="color:#e6db74">&#34;classpath:/spring/spring.xml&#34;</span>);
-</span></span><span style="display:flex;"><span>        main.<span style="color:#a6e22e">setBasedPackages</span>(<span style="color:#e6db74">&#34;nl.sytac.edu&#34;</span>);
-</span></span><span style="display:flex;"><span>        main.<span style="color:#a6e22e">run</span>();
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#815ba4">static</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">main</span>( String<span style="color:#5bc4bf">[]</span> args ) <span style="color:#815ba4">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        Main main <span style="color:#5bc4bf">=</span> <span style="color:#815ba4">new</span> Main();
+</span></span><span style="display:flex;"><span>        <span style="color:#776e71">//use any route builder and components declared within this package</span>
+</span></span><span style="display:flex;"><span>        main.<span style="color:#06b6ef">setFileApplicationContextUri</span>(<span style="color:#48b685">&#34;classpath:/spring/spring.xml&#34;</span>);
+</span></span><span style="display:flex;"><span>        main.<span style="color:#06b6ef">setBasedPackages</span>(<span style="color:#48b685">&#34;nl.sytac.edu&#34;</span>);
+</span></span><span style="display:flex;"><span>        main.<span style="color:#06b6ef">run</span>();
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Bean</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> RouteBuilder <span style="color:#a6e22e">getSimpleRouteBuilder</span>() {
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> SimpleRouteBuilder();
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Bean</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> RouteBuilder <span style="color:#06b6ef">getSimpleRouteBuilder</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#815ba4">return</span> <span style="color:#815ba4">new</span> SimpleRouteBuilder();
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><h4 id="integrating-camel-in-an-existing-web-application">Integrating Camel in an existing (web) application</h4>
@@ -121,41 +122,41 @@ To give ourselves some more flexibility we will also use a standard xml Spring c
 <h4 id="setup-rest-endpoint">Setup Rest Endpoint</h4>
 <p>The most convenient way to expose or consume a REST or SOAP webservices in Camel is to use the CXF component. With CXF we can use <code>JAX-RS</code> and <code>JAX-WS</code> annotations to configure the service classes.</p>
 <p>The first thing we must do is to setup the serving class that describes the resource we want to expose:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">package</span> io.sytac.edu.rest;
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#5bc4bf">package</span> <span style="color:#fec418">io.sytac.edu.rest</span>;
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.Consumes;
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.POST;
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.Path;
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.Produces;
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> javax.ws.rs.core.Response;
+</span></span><span style="display:flex;"><span><span style="color:#5bc4bf">import</span> <span style="color:#fec418">javax.ws.rs.Consumes</span>;
+</span></span><span style="display:flex;"><span><span style="color:#5bc4bf">import</span> <span style="color:#fec418">javax.ws.rs.POST</span>;
+</span></span><span style="display:flex;"><span><span style="color:#5bc4bf">import</span> <span style="color:#fec418">javax.ws.rs.Path</span>;
+</span></span><span style="display:flex;"><span><span style="color:#5bc4bf">import</span> <span style="color:#fec418">javax.ws.rs.Produces</span>;
+</span></span><span style="display:flex;"><span><span style="color:#5bc4bf">import</span> <span style="color:#fec418">javax.ws.rs.core.Response</span>;
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">/**
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> * Service class for our REST endpoint
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"> */</span>
+</span></span><span style="display:flex;"><span><span style="color:#776e71">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#776e71"> * Service class for our REST endpoint
+</span></span></span><span style="display:flex;"><span><span style="color:#776e71"> */</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@Path</span>(<span style="color:#e6db74">&#34;/inventory/status&#34;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">InventoryResource</span> {
+</span></span><span style="display:flex;"><span><span style="color:#5bc4bf">@Path</span>(<span style="color:#48b685">&#34;/inventory/status&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">InventoryResource</span> {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@POST</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Consumes</span>(<span style="color:#e6db74">&#34;application/json&#34;</span>)
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Produces</span>(<span style="color:#e6db74">&#34;application/json&#34;</span>)
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> Response <span style="color:#a6e22e">updateStatus</span>(String status) {
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@POST</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Consumes</span>(<span style="color:#48b685">&#34;application/json&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Produces</span>(<span style="color:#48b685">&#34;application/json&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> Response <span style="color:#06b6ef">updateStatus</span>(String status) {
+</span></span><span style="display:flex;"><span>        <span style="color:#815ba4">return</span> <span style="color:#815ba4">null</span>;
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>We provided a trivial implementation of the method, as the real implementation of the logic will be delegated to the route we are about to create. The JAX-RS annotations allow us to specify in a transparent way the supported content types, having the implementation actually enforcing them.
 To make the endpoint available to our route, the most flexible way is to create a CXF bean that delegates to it, and to set it in our Spring context:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;beans</span> <span style="color:#a6e22e">xmlns=</span><span style="color:#e6db74">&#34;http://www.springframework.org/schema/beans&#34;</span>
-</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">xmlns:xsi=</span><span style="color:#e6db74">&#34;http://www.w3.org/2001/XMLSchema-instance&#34;</span>
-</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">xmlns:cxf=</span><span style="color:#e6db74">&#34;http://camel.apache.org/schema/cxf&#34;</span>
-</span></span><span style="display:flex;"><span>       <span style="color:#a6e22e">xsi:schemaLocation=</span><span style="color:#e6db74">&#34;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd&#34;</span><span style="color:#f92672">&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#5bc4bf">&lt;beans</span> <span style="color:#06b6ef">xmlns=</span><span style="color:#48b685">&#34;http://www.springframework.org/schema/beans&#34;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#06b6ef">xmlns:xsi=</span><span style="color:#48b685">&#34;http://www.w3.org/2001/XMLSchema-instance&#34;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#06b6ef">xmlns:cxf=</span><span style="color:#48b685">&#34;http://camel.apache.org/schema/cxf&#34;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#06b6ef">xsi:schemaLocation=</span><span style="color:#48b685">&#34;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+</span></span></span><span style="display:flex;"><span><span style="color:#48b685">              http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
+</span></span></span><span style="display:flex;"><span><span style="color:#48b685">              http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd&#34;</span><span style="color:#5bc4bf">&gt;</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;cxf:rsServer</span> <span style="color:#a6e22e">id=</span><span style="color:#e6db74">&#34;restInventory&#34;</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;http://localhost:8000/services&#34;</span>
-</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">serviceClass=</span><span style="color:#e6db74">&#34;io.sytac.edu.rest.InventoryResource&#34;</span> <span style="color:#a6e22e">loggingFeatureEnabled=</span><span style="color:#e6db74">&#34;true&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;cxf:rsServer</span> <span style="color:#06b6ef">id=</span><span style="color:#48b685">&#34;restInventory&#34;</span> <span style="color:#06b6ef">address=</span><span style="color:#48b685">&#34;http://localhost:8000/services&#34;</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#06b6ef">serviceClass=</span><span style="color:#48b685">&#34;io.sytac.edu.rest.InventoryResource&#34;</span> <span style="color:#06b6ef">loggingFeatureEnabled=</span><span style="color:#48b685">&#34;true&#34;</span><span style="color:#5bc4bf">/&gt;</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/beans&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#5bc4bf">&lt;/beans&gt;</span>
 </span></span></code></pre></div><p>Here we created a <code>cxf:rsServer</code> bean as we want it to serve requests, and specified the hostname, port, base url. The <code>serviceClass</code> attribute points to the class we defined above. Again, the implementation of this class is just ignored as the real processing of the request is specified in the route, which we are about to explore.</p>
 <h4 id="routing">Routing</h4>
 <p>Routes are specified in Camel by extending the abstract class  <code>RouteBuilder</code>, which provides all the Camel DSL goodness. All we have to do is implement the <code>configure() </code> method and specify the route(s). A route has one <em>consumer endpoint</em>, representing the point the processing starts from, and one or more <em>producer endpoints</em>, to represent delegation steps outside the present route, typically using <em>Camel components</em>.
@@ -163,23 +164,23 @@ In our case we want to consume requests coming to our REST resource, therefore w
 <p>After the <code>from(...)</code> we specify the EIP that must be applied in our processing logic, and the DSL provides a natural and straightforward way to do so.
 A simple, dummy  implementation of this concept applied to our use case results in this initial version of our route builder, that defines one route that accepts any JSON request and replies with a static JSON response.
 This allows us to inspect how a <code>Processor</code> works in Camel. All the processing steps in Camel are essentially done through a chain of <code>Processor</code> implementations, each acting on a mutable instance of <code>Exchange</code> (we will get back later to the details of the <code>Exchange</code>). The DSL implicitly introduces processors in a transparent way, however in an explicit <code>Processor</code> we can access directly the structure of the <code>Exchange</code>. To some extent we can do this also through the DSL, and in general using the DSL gives us a more consistent view of the processing, without the need to inspect the details of a specific <code>Processor</code> implementation.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#5bc4bf">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">SimpleRouteBuilder</span> <span style="color:#815ba4">extends</span> RouteBuilder {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
-</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">process</span>(
-</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">new</span> Processor() {
-</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">process</span>(Exchange exchange) <span style="color:#66d9ef">throws</span> Exception {
-</span></span><span style="display:flex;"><span>                        exchange.<span style="color:#a6e22e">getOut</span>().<span style="color:#a6e22e">setBody</span>(
-</span></span><span style="display:flex;"><span>                                Response.<span style="color:#a6e22e">ok</span>().<span style="color:#a6e22e">entity</span>(
-</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#34;{\n&#34;</span> <span style="color:#f92672">+</span>
-</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#34;  \&#34;status\&#34;: \&#34;OK\&#34;,\n&#34;</span> <span style="color:#f92672">+</span>
-</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#34;  \&#34;message\&#34;: \&#34;stock update received\&#34;\n&#34;</span> <span style="color:#f92672">+</span>
-</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#34;}&#34;</span>).<span style="color:#a6e22e">build</span>());
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">configure</span>() <span style="color:#815ba4">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#48b685">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">routeId</span>(<span style="color:#48b685">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">process</span>(
+</span></span><span style="display:flex;"><span>                <span style="color:#815ba4">new</span> Processor() {
+</span></span><span style="display:flex;"><span>                    <span style="color:#815ba4">public</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">process</span>(Exchange exchange) <span style="color:#815ba4">throws</span> Exception {
+</span></span><span style="display:flex;"><span>                        exchange.<span style="color:#06b6ef">getOut</span>().<span style="color:#06b6ef">setBody</span>(
+</span></span><span style="display:flex;"><span>                                Response.<span style="color:#06b6ef">ok</span>().<span style="color:#06b6ef">entity</span>(
+</span></span><span style="display:flex;"><span>                                    <span style="color:#48b685">&#34;{\n&#34;</span> <span style="color:#5bc4bf">+</span>
+</span></span><span style="display:flex;"><span>                                    <span style="color:#48b685">&#34;  \&#34;status\&#34;: \&#34;OK\&#34;,\n&#34;</span> <span style="color:#5bc4bf">+</span>
+</span></span><span style="display:flex;"><span>                                    <span style="color:#48b685">&#34;  \&#34;message\&#34;: \&#34;stock update received\&#34;\n&#34;</span> <span style="color:#5bc4bf">+</span>
+</span></span><span style="display:flex;"><span>                                    <span style="color:#48b685">&#34;}&#34;</span>).<span style="color:#06b6ef">build</span>());
 </span></span><span style="display:flex;"><span>                    }
 </span></span><span style="display:flex;"><span>                }
 </span></span><span style="display:flex;"><span>            );
@@ -189,44 +190,44 @@ This allows us to inspect how a <code>Processor</code> works in Camel. All the p
 <p>What happened exactly along the route?</p>
 <p>The <code>cxf</code> component accepted the request, and mapped the body of the request in the body of the <code>In</code> message of the <code>Exchange</code>, and the request headers in equivalent message headers. At this point any processing step deals with the <em>normalized message structure</em> being the <code>Exchange</code>, and can access it and modify being completely agnostic of where it comes from (it could come equivalently from consuming a JMS queue) or where it will go to (file system or DB).</p>
 <p>The equivalent version that uses purely DSL constructs looks like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#5bc4bf">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">SimpleRouteBuilder</span> <span style="color:#815ba4">extends</span> RouteBuilder {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
-</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#e6db74">&#34;{\n&#34;</span> <span style="color:#f92672">+</span>
-</span></span><span style="display:flex;"><span>                                <span style="color:#e6db74">&#34;  \&#34;status\&#34;: \&#34;OK\&#34;,\n&#34;</span> <span style="color:#f92672">+</span>
-</span></span><span style="display:flex;"><span>                                <span style="color:#e6db74">&#34;  \&#34;message\&#34;: \&#34;stock update received\&#34;\n&#34;</span> <span style="color:#f92672">+</span>
-</span></span><span style="display:flex;"><span>                                <span style="color:#e6db74">&#34;}&#34;</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">configure</span>() <span style="color:#815ba4">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#48b685">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">routeId</span>(<span style="color:#48b685">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">setBody</span>(constant(<span style="color:#48b685">&#34;{\n&#34;</span> <span style="color:#5bc4bf">+</span>
+</span></span><span style="display:flex;"><span>                                <span style="color:#48b685">&#34;  \&#34;status\&#34;: \&#34;OK\&#34;,\n&#34;</span> <span style="color:#5bc4bf">+</span>
+</span></span><span style="display:flex;"><span>                                <span style="color:#48b685">&#34;  \&#34;message\&#34;: \&#34;stock update received\&#34;\n&#34;</span> <span style="color:#5bc4bf">+</span>
+</span></span><span style="display:flex;"><span>                                <span style="color:#48b685">&#34;}&#34;</span>))
 </span></span><span style="display:flex;"><span>        ;
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>or even better, using Jackson as a provider for CXF i.e. having the whole serialization being handled behind the scenes:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#5bc4bf">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">SimpleRouteBuilder</span> <span style="color:#815ba4">extends</span> RouteBuilder {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
-</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">configure</span>() <span style="color:#815ba4">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#48b685">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">routeId</span>(<span style="color:#48b685">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">setBody</span>(constant(<span style="color:#815ba4">new</span> Response(<span style="color:#48b685">&#34;Ok&#34;</span>, <span style="color:#48b685">&#34;stock update received&#34;</span>)));
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>This requires only a slight complication on the configuration of the <code>rsServer</code>, to set the provider to a Jackson bean. In any case this pays off in terms of conciseness and clarity.</p>
 <p><a href="https://github.com/sytac/camel-handson/commit/176bfd4949db3b5655827fdfa3259758326c15d0">Code check-point</a></p>
 <h4 id="persisting-the-message-to-a-file">Persisting the message to a file</h4>
 <p>After this diversion on the routing logic, let&rsquo;s focus again on our use case. We want to persist each JSON message we receive through the request body into a file, and we want a new file for each request to be written. The camel <a href="https://camel.apache.org/file2.html">File component</a> provides a flexible and straightforward way to do so. We must simply introduce a step that sends the <code>Exchange</code> to the <code>file</code> component, that takes care of all the boilerplate and tricky parts we have to deal with when writing on file system in a concurrent environment.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#5bc4bf">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">SimpleRouteBuilder</span> <span style="color:#815ba4">extends</span> RouteBuilder {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
-</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">to</span>(<span style="color:#e6db74">&#34;file:///tmp/inventory?fileName=inventory-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">configure</span>() <span style="color:#815ba4">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#48b685">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">routeId</span>(<span style="color:#48b685">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">to</span>(<span style="color:#48b685">&#34;file:///tmp/inventory?fileName=inventory-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">setBody</span>(constant(<span style="color:#815ba4">new</span> Response(<span style="color:#48b685">&#34;Ok&#34;</span>, <span style="color:#48b685">&#34;stock update received&#34;</span>)));
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>In general components in Camel are addressed by means of a url where the protocol represents the component we want to use, followed by a base url and a query string to configure and tweak the component itself. In this case we instruct <code>file</code> on how to create the file name, by means of the <em>simple expression language</em> which is very useful in Camel when we have to deal with dynamic content. In this case we want the file name to contain a simple timestamp.
@@ -234,42 +235,42 @@ If we run this example, we can see that for every request there is a new file cr
 <p><a href="https://github.com/sytac/camel-handson/commit/ec3b524e495b630154a5cbbc6ce89d8a7d39edee">Code check-point</a></p>
 <h4 id="persisting-the-message-to-a-file-and-to-mongodb">Persisting the message to a file and to MongoDB</h4>
 <p>Let us suppose we want to store the incoming JSON on a MongoDB collection instead of file system. Of course Camel provides us with a component for this case, just it requires us to add an extra dependency:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-XML" data-lang="XML"><span style="display:flex;"><span>    <span style="color:#f92672">&lt;dependency&gt;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.camel<span style="color:#f92672">&lt;/groupId&gt;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;artifactId&gt;</span>camel-mongodb<span style="color:#f92672">&lt;/artifactId&gt;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;version&gt;</span>${camel.version}<span style="color:#f92672">&lt;/version&gt;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/dependency&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-XML" data-lang="XML"><span style="display:flex;"><span>    <span style="color:#5bc4bf">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;groupId&gt;</span>org.apache.camel<span style="color:#5bc4bf">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;artifactId&gt;</span>camel-mongodb<span style="color:#5bc4bf">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#5bc4bf">&lt;version&gt;</span>${camel.version}<span style="color:#5bc4bf">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">&lt;/dependency&gt;</span>
 </span></span></code></pre></div><p>Then we must just configure a <code>MongoClient</code> bean in our Spring context:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>    <span style="color:#a6e22e">@Bean</span>(name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;mongoClient&#34;</span>)
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> Mongo <span style="color:#a6e22e">mongoDb</span>() <span style="color:#66d9ef">throws</span> UnknownHostException {
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//default port on localhost</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> MongoClient(<span style="color:#e6db74">&#34;localhost&#34;</span>, 27017);
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Bean</span>(name <span style="color:#5bc4bf">=</span> <span style="color:#48b685">&#34;mongoClient&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> Mongo <span style="color:#06b6ef">mongoDb</span>() <span style="color:#815ba4">throws</span> UnknownHostException {
+</span></span><span style="display:flex;"><span>        <span style="color:#776e71">//default port on localhost</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#815ba4">return</span> <span style="color:#815ba4">new</span> MongoClient(<span style="color:#48b685">&#34;localhost&#34;</span>, 27017);
 </span></span><span style="display:flex;"><span>    }
 </span></span></code></pre></div><p>and then the ceremony is over. All we are left to do is replacing our <code>file</code> component with a <code>mongodb</code> component, configured to use the <code>mongoClient</code> bean above defined, and to use the <code>inventory</code> database, with <code>updates</code>  as collection, and <code>save</code> operation (as we are saving our data in the collection).</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#5bc4bf">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">SimpleRouteBuilder</span> <span style="color:#815ba4">extends</span> RouteBuilder {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
-</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">to</span>(<span style="color:#e6db74">&#34;mongodb:mongoClient?database=inventory&amp;collection=updates&amp;operation=save&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">configure</span>() <span style="color:#815ba4">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#48b685">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">routeId</span>(<span style="color:#48b685">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">to</span>(<span style="color:#48b685">&#34;mongodb:mongoClient?database=inventory&amp;collection=updates&amp;operation=save&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">setBody</span>(constant(<span style="color:#815ba4">new</span> Response(<span style="color:#48b685">&#34;Ok&#34;</span>, <span style="color:#48b685">&#34;stock update received&#34;</span>)));
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>If we run this code we can see that for every POST to our REST api we have an insertion on our database.
 <a href="https://github.com/sytac/camel-handson/commit/b85dc966736fc4bc669fbbc2f7b80050dfa4661b">Code check-point</a></p>
 <p>We can even decide to store the message both on file system and on Mongo, and the route looks like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#5bc4bf">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">SimpleRouteBuilder</span> <span style="color:#815ba4">extends</span> RouteBuilder {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
-</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">to</span>(<span style="color:#e6db74">&#34;file:///tmp/inventory?fileName=inventory-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">to</span>(<span style="color:#e6db74">&#34;mongodb:mongoClient?database=inventory&amp;collection=updates&amp;operation=save&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">configure</span>() <span style="color:#815ba4">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#48b685">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">routeId</span>(<span style="color:#48b685">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">to</span>(<span style="color:#48b685">&#34;file:///tmp/inventory?fileName=inventory-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">to</span>(<span style="color:#48b685">&#34;mongodb:mongoClient?database=inventory&amp;collection=updates&amp;operation=save&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">setBody</span>(constant(<span style="color:#815ba4">new</span> Response(<span style="color:#48b685">&#34;Ok&#34;</span>, <span style="color:#48b685">&#34;stock update received&#34;</span>)));
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p><a href="https://github.com/sytac/camel-handson/commit/0f72b67e863b4f0415955938d89e9184a47fcf3b">Code check-point</a></p>
@@ -277,65 +278,65 @@ If we run this example, we can see that for every request there is a new file cr
 <p>In the previous example we have stored the same message both on DB and filesystem. We might think to split the incoming message based on its structure, and store e.g. some jeans related stock information on DB and the shoes related information on filesystem.</p>
 <p>For this kind of purposes an easy approach is to introduce a <code>when</code> clause where we can specify <code>jsonpath</code> expressions that our input message must match in order to be treated the way we need.
 For this exercise we will deal with shoes inventory updates that will be persisted on file:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;shoes&#34;</span>: [{
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Nike AIR&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Running shoes&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">13</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">23</span>
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">&#34;shoes&#34;</span>: [{
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;name&#34;</span>: <span style="color:#48b685">&#34;Nike AIR&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;description&#34;</span>: <span style="color:#48b685">&#34;Running shoes&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC1&#34;</span>: <span style="color:#f99b15">13</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC2&#34;</span>: <span style="color:#f99b15">23</span>
 </span></span><span style="display:flex;"><span>            },
 </span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Adidas Ultra Boost&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Running shoes&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">7</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;name&#34;</span>: <span style="color:#48b685">&#34;Adidas Ultra Boost&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;description&#34;</span>: <span style="color:#48b685">&#34;Running shoes&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC1&#34;</span>: <span style="color:#f99b15">7</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC2&#34;</span>: <span style="color:#f99b15">3</span>
 </span></span><span style="display:flex;"><span>            },
 </span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;TOD&#39;s Suede&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Sneakers&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">3</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">9</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;name&#34;</span>: <span style="color:#48b685">&#34;TOD&#39;s Suede&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;description&#34;</span>: <span style="color:#48b685">&#34;Sneakers&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC1&#34;</span>: <span style="color:#f99b15">3</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC2&#34;</span>: <span style="color:#f99b15">9</span>
 </span></span><span style="display:flex;"><span>            }
 </span></span><span style="display:flex;"><span>    ]
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>and jeans inventory messages that will be persisted on DB:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;jeans&#34;</span>: [{
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Levi&#39;s 501&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Blue jeans&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">32</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">10</span>
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">&#34;jeans&#34;</span>: [{
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;name&#34;</span>: <span style="color:#48b685">&#34;Levi&#39;s 501&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;description&#34;</span>: <span style="color:#48b685">&#34;Blue jeans&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC1&#34;</span>: <span style="color:#f99b15">32</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC2&#34;</span>: <span style="color:#f99b15">10</span>
 </span></span><span style="display:flex;"><span>            },
 </span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Diesel&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Blue jeans&#34;</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC1&#34;</span>: <span style="color:#ae81ff">11</span>,
-</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;DC2&#34;</span>: <span style="color:#ae81ff">7</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;name&#34;</span>: <span style="color:#48b685">&#34;Diesel&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;description&#34;</span>: <span style="color:#48b685">&#34;Blue jeans&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC1&#34;</span>: <span style="color:#f99b15">11</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#5bc4bf">&#34;DC2&#34;</span>: <span style="color:#f99b15">7</span>
 </span></span><span style="display:flex;"><span>            }
 </span></span><span style="display:flex;"><span>    ]
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>We want also to deal with messages that do not conform to any of these 2 options, saving them in corresponding error files (we could also send them alternatively to a <em>dead letter queue</em>) .</p>
 <p>The solution is very straightforward, it just might take a bit if you are new to jsonpath expressions:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Component</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SimpleRouteBuilder</span> <span style="color:#66d9ef">extends</span> RouteBuilder {
+<div class="highlight"><pre tabindex="0" style="color:#e7e9db;background-color:#2f1e2e;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#5bc4bf">@Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#815ba4">public</span> <span style="color:#815ba4">class</span> <span style="color:#fec418">SimpleRouteBuilder</span> <span style="color:#815ba4">extends</span> RouteBuilder {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> String FILE_INVENTORY_ENDPOINT <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;file:///tmp/inventory?fileName=inventory-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>;
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> String MONGO_INVENTORY_ENDPOINT <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;mongodb:mongoClient?database=inventory&amp;collection=updates&amp;operation=save&#34;</span>;
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> String FILE_ERROR_ENDPOINT <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;file:///tmp/inventory?fileName=error-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#815ba4">static</span> <span style="color:#815ba4">final</span> String FILE_INVENTORY_ENDPOINT <span style="color:#5bc4bf">=</span> <span style="color:#48b685">&#34;file:///tmp/inventory?fileName=inventory-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#815ba4">static</span> <span style="color:#815ba4">final</span> String MONGO_INVENTORY_ENDPOINT <span style="color:#5bc4bf">=</span> <span style="color:#48b685">&#34;mongodb:mongoClient?database=inventory&amp;collection=updates&amp;operation=save&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#815ba4">static</span> <span style="color:#815ba4">final</span> String FILE_ERROR_ENDPOINT <span style="color:#5bc4bf">=</span> <span style="color:#48b685">&#34;file:///tmp/inventory?fileName=error-${date:now:yyyyMMdd@HHmmssSS}.json&#34;</span>;
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">configure</span>() <span style="color:#66d9ef">throws</span> Exception {
-</span></span><span style="display:flex;"><span>        from(<span style="color:#e6db74">&#34;cxfrs:bean:restInventory&#34;</span>)
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">routeId</span>(<span style="color:#e6db74">&#34;restInventoryRoute&#34;</span>)
-</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">choice</span>()
-</span></span><span style="display:flex;"><span>                    .<span style="color:#a6e22e">when</span>().<span style="color:#a6e22e">jsonpath</span>(<span style="color:#e6db74">&#34;$[?(@.shoes)]&#34;</span>)
-</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">to</span>(FILE_INVENTORY_ENDPOINT)
-</span></span><span style="display:flex;"><span>                    .<span style="color:#a6e22e">when</span>().<span style="color:#a6e22e">jsonpath</span>(<span style="color:#e6db74">&#34;$[?(@.jeans)]&#34;</span>)
-</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">to</span>(MONGO_INVENTORY_ENDPOINT)
-</span></span><span style="display:flex;"><span>                    .<span style="color:#a6e22e">otherwise</span>()
-</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">to</span>(FILE_ERROR_ENDPOINT)
-</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">end</span>()
-</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">setBody</span>(constant(<span style="color:#66d9ef">new</span> Response(<span style="color:#e6db74">&#34;Ok&#34;</span>, <span style="color:#e6db74">&#34;stock update received&#34;</span>)));
+</span></span><span style="display:flex;"><span>    <span style="color:#5bc4bf">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#815ba4">public</span> <span style="color:#fec418">void</span> <span style="color:#06b6ef">configure</span>() <span style="color:#815ba4">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        from(<span style="color:#48b685">&#34;cxfrs:bean:restInventory&#34;</span>)
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">routeId</span>(<span style="color:#48b685">&#34;restInventoryRoute&#34;</span>)
+</span></span><span style="display:flex;"><span>                .<span style="color:#06b6ef">choice</span>()
+</span></span><span style="display:flex;"><span>                    .<span style="color:#06b6ef">when</span>().<span style="color:#06b6ef">jsonpath</span>(<span style="color:#48b685">&#34;$[?(@.shoes)]&#34;</span>)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#06b6ef">to</span>(FILE_INVENTORY_ENDPOINT)
+</span></span><span style="display:flex;"><span>                    .<span style="color:#06b6ef">when</span>().<span style="color:#06b6ef">jsonpath</span>(<span style="color:#48b685">&#34;$[?(@.jeans)]&#34;</span>)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#06b6ef">to</span>(MONGO_INVENTORY_ENDPOINT)
+</span></span><span style="display:flex;"><span>                    .<span style="color:#06b6ef">otherwise</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#06b6ef">to</span>(FILE_ERROR_ENDPOINT)
+</span></span><span style="display:flex;"><span>                .<span style="color:#06b6ef">end</span>()
+</span></span><span style="display:flex;"><span>            .<span style="color:#06b6ef">setBody</span>(constant(<span style="color:#815ba4">new</span> Response(<span style="color:#48b685">&#34;Ok&#34;</span>, <span style="color:#48b685">&#34;stock update received&#34;</span>)));
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>The <code>choice</code> clause allows us to specify any predicate or expression we might want to evaluate on the incoming <code>Exchange</code>, in this case as we know we are dealing with JSON body so we make direct use of the <a href="http://goessner.net/articles/JsonPath/"><code>jsonpath</code></a> construct. Camel Expression language is very rich and it might be subject of a future post.</p>
@@ -376,11 +377,11 @@ For these cases the <code>CamelContext</code> provides with an instance of <code
         
         
         
-        <a href="http://localhost:1313/">Pierangelo Cecchetto</a>,
+        <a href="http://localhost:1313/">BLOG</a>,
         
         &copy;
         2020
-        <a href="http://localhost:1313/about/"></a>
+        <a href="http://localhost:1313/about/">Pierangelo Cecchetto</a>
       </p>
   </div>
 </footer></body>
