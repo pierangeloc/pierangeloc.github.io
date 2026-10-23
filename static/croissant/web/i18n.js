@@ -1,6 +1,3 @@
-// All user-facing strings for the web UI, in both languages.
-// The core (lamination.ts) still formats its warnings in Italian; `issue()` below
-// renders the structured Plan.issues instead, so the page can switch language.
 const it = {
     title: "Sfogliatura",
     subtitle: "Dimensioni del foglio a ogni giro di pieghe, per croissant e pain au chocolat.",
@@ -49,7 +46,6 @@ const it = {
         targetHeight: "L'altezza del triangolo è il lato corto della sfoglia finale: non la scegli alla fine, la decidono pieghe, tagli e spessori. Metti qui quella che vuoi e la pagina cerca le combinazioni che ci arrivano. 0 = nessuna ricerca.",
         cutStyle: "Diagonale: tagli la striscia in rettangoli larghi quanto la base e dividi ognuno d'angolo — due triangoli rettangoli a specchio, niente teste di scarto. Zigzag: tagli obliqui alternati, triangoli isosceli, ma le due teste restano fuori e costano un triangolo per striscia.",
     },
-    // Keyed by what a step is, not by its number: a plan can have any number of turns.
     steps: {
         package: "Avvolgi il burro",
         fold: "Piega a {n}",
@@ -64,7 +60,6 @@ const it = {
     rest: {
         package: "30 min",
         fold: "30 min",
-        // Il blocco ha il massimo degli strati da far rilassare prima dell'ultima stesura.
         foldLast: "45-60 min",
         split: "gli altri pezzi in frigo, affiancati",
         final: "tra le passate se il burro unge o la pasta si ritira",
@@ -283,7 +278,6 @@ const en = {
     rest: {
         package: "30 min",
         fold: "30 min",
-        // The block has the most layers to relax before the last roll-out.
         foldLast: "45-60 min",
         split: "the other pieces in the fridge, side by side",
         final: "between passes if the butter smears or the dough shrinks",
@@ -445,7 +439,6 @@ const en = {
 };
 export const strings = { it, en };
 export const fill = (tpl, vars) => tpl.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
-/** Render a structured Plan issue in the chosen language. */
 export function issueText(code, step, v, lang) {
     const n = (x, d = 1) => (x === undefined ? "" : String(Math.round(x * 10 ** d) / 10 ** d));
     const at = step ? (lang === "it" ? `Passo ${step}: ` : `Step ${step}: `) : "";

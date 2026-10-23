@@ -1,6 +1,3 @@
-// Control primitives for the panel. Deliberately a small vocabulary — scrub, choice,
-// toggle, vec2, list — each one a full-width row: label left, value right, a fill bar
-// behind showing where the value sits in its range. Values never snap: the digits roll.
 const el = (tag, cls, text) => {
     const n = document.createElement(tag);
     if (cls)
@@ -44,9 +41,6 @@ const chevron = (up) => {
     svg.appendChild(p);
     return svg;
 };
-/** An outlined numeric field: floating label, typeable input, increment/decrement
- *  buttons, helper text, and an error state when the value leaves its range.
- *  The label doubles as a scrub handle — drag it sideways to change the value. */
 export function numberField(o, modifiedTitle) {
     const scale = o.scale ?? 1;
     const dec = o.decimals ?? 1;
@@ -123,14 +117,12 @@ export function numberField(o, modifiedTitle) {
             commit(value + (e.key === "ArrowUp" ? 1 : -1) * o.step * (e.shiftKey ? 10 : 1));
         }
     });
-    // The wheel only acts on a focused field, so it never hijacks page scrolling.
     input.addEventListener("wheel", (e) => {
         if (document.activeElement !== input)
             return;
         e.preventDefault();
         commit(value - Math.sign(e.deltaY) * o.step * (e.shiftKey ? 10 : 1));
     }, { passive: false });
-    // Press and hold a stepper to repeat.
     const hold = (btn, dir) => {
         let timer = 0;
         let repeat = 0;
@@ -150,7 +142,6 @@ export function numberField(o, modifiedTitle) {
     };
     hold(up, 1);
     hold(down, -1);
-    // Drag the label sideways to scrub, as Base UI's ScrubArea does.
     let dragging = false;
     let startX = 0;
     let startV = 0;
@@ -192,10 +183,6 @@ export function numberField(o, modifiedTitle) {
 function fmtN(v, dec) {
     return (Math.round(v * 10 ** dec) / 10 ** dec).toFixed(dec);
 }
-/** Inline segmented control. One option is in the tab order at a time (the roving tabindex
- *  of a radio group), so Tab walks from control to control rather than through every option.
- *  Whichever group has the focus takes the arrow keys and the number keys 1..9, which is what
- *  the badges show. */
 export function choice(o, modifiedTitle) {
     const { row, setModified } = rowShell(o, modifiedTitle);
     row.classList.add("choice");
@@ -223,8 +210,6 @@ export function choice(o, modifiedTitle) {
         paint(opt.value);
         buttons[i].focus();
     };
-    // Arrows move inside the group and commit as they go, the way a radio group behaves;
-    // the number keys jump straight to an option.
     group.addEventListener("keydown", (e) => {
         const here = buttons.findIndex((b) => b === document.activeElement);
         const n = buttons.length;
@@ -259,7 +244,6 @@ export function choice(o, modifiedTitle) {
             const on = opt.value === v;
             buttons[i].classList.toggle("on", on);
             buttons[i].setAttribute("aria-checked", String(on));
-            // Only one option is tabbable: Tab then leaves the group instead of crossing it.
             buttons[i].tabIndex = i === sel ? 0 : -1;
         });
         if (o.reference !== undefined)
@@ -288,7 +272,6 @@ export function toggle(o, modifiedTitle) {
     paint();
     return { node: row, set: (v) => ((value = v), paint()) };
 }
-/** Two numeric fields side by side, with either a ratio lock or a swap button between them. */
 export function vec2(o, modifiedTitle) {
     const wrap = el("div", "pair");
     let value = [...o.value];

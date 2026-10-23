@@ -1,9 +1,3 @@
-// A flat animation of the plan: the block seen from above, drawn to scale, stretching,
-// being trimmed, folded, rotated and cut. No shading and no perspective on purpose — the
-// point is the measurements and what the hands do, not what the dough looks like.
-//
-// Every phase comes out of `Plan.steps`, so the animation can never disagree with the
-// table above it: the same dimensions drive both.
 import { trianglesInStrip } from "../lamination.js";
 import { buildPhases, butterFraction, chapterAt, chaptersOf, ease, isPackage, lerp, r1 } from "./phases.js";
 import { finishSound, phaseSound, primeSound, setSoundEnabled, soundEnabled, tickSound } from "./sound.js";
@@ -14,28 +8,17 @@ const svgEl = (tag, attrs = {}) => {
         n.setAttribute(k, String(v));
     return n;
 };
-/** The same {placeholder} filling as the rest of the page, kept local so anim.ts does not
- *  depend on the i18n module. */
 const fillIn = (s, vals) => s.replace(/\{(\w+)\}/g, (_, k) => String(vals[k] ?? ""));
 export function animation(plan, str, masses, stepTitle) {
     const phases = buildPhases(plan, str, masses);
     const base = plan.croissant.base;
-    // What the strip the animation follows is cut into. The focus phases keep the first piece,
-    // so the first strip's share of the pain au chocolat is the one to draw.
     const share = plan.allocation.stripBreakdown.find((s) => s.strip === 1) ?? {
         strip: 1,
         croissants: plan.stripSet[0]?.croissants ?? 0,
         pac: 0,
     };
-    // Two chapters per step — the preparation and the gesture itself — so the fold can be
-    // replayed on its own instead of dragging the roll-out along with it every time.
     const chapters = chaptersOf(phases);
-    // The scale degree a phase sounds on is the step's, not the chapter's: the run should still
-    // climb once per step now that each step has been cut in two.
     const degreeOf = (id) => plan.steps.findIndex((s) => s.id === id);
-    // Butter keeps the same share of the block's thickness from the package to the last sheet:
-    // rolling thins dough and butter alike, folding multiplies both. So the edge view can draw
-    // the real sandwich at every moment — dough, butter, dough — just divided into more layers.
     const butterFrac = butterFraction(plan);
     const total = phases.reduce((n, p) => n + p.dur, 0);
     const root = document.createElement("div");
@@ -86,10 +69,6 @@ export function animation(plan, str, masses, stepTitle) {
         return b;
     });
     root.appendChild(chapterBar);
-    // One scale for the whole animation: growth has to read as growth, so nothing may be
-    // re-fitted from frame to frame.
-    // Length runs across the stage, the pin width down it; a rotation swaps the two, so each
-    // phase claims both ways round.
     const span = (f, g) => phases.reduce((m, p) => {
         const pick = p.kind === "rotate" ? Math.max(f(p.a), g(p.a)) : Math.max(f(p.a), f(p.b));
         return Math.max(m, pick);
@@ -100,8 +79,6 @@ export function animation(plan, str, masses, stepTitle) {
     const scale = Math.min((1000 - 2 * PAD) / maxL, (300 - 2 * PAD) / maxW);
     const CX = 500;
     const CY = 150;
-    // The edge view has a vertical scale of its own: 4 mm and 5 cm have to be visible in the
-    // same picture, so the thickness is drawn far out of proportion and labelled as such.
     const EDGE_Y = 370;
     const maxT = phases.reduce((m, q) => Math.max(m, q.a.t, q.b.t), 0.1);
     const tScale = 54 / maxT;
@@ -119,11 +96,7 @@ export function animation(plan, str, masses, stepTitle) {
         const l = lerp(p.a.l, p.b.l, u);
         const t = lerp(p.a.t, p.b.t, u);
         const layers = u > 0.6 ? p.b.layers : p.a.layers;
-        // Length runs left to right, the pin width top to bottom.
         const whole = p.kind === "cut";
-        // A rotation changes the orientation, not the size: the block keeps the dimensions it
-        // came in with and the transform does the turning. Interpolating towards the swapped
-        // pair as well would both resize it mid-spin and land it a second quarter turn out.
         const turning = p.kind === "rotate";
         const topL = turning || whole ? p.a.l : l;
         const topW = turning || whole ? p.a.w : w;
@@ -135,9 +108,6 @@ export function animation(plan, str, masses, stepTitle) {
         const body = svgEl("g", { transform: `rotate(${rot} ${CX} ${CY})` });
         g.appendChild(body);
         if (p.kind === "fold") {
-            // A fold is panels coming to rest on top of each other — never a piece going away.
-            // The sheet keeps its full length, marked by the fold lines, and the panels slide
-            // onto the stack one over the other.
             const n = p.pieces;
             const full = p.a.l * scale;
             const panel = full / n;
@@ -160,10 +130,6 @@ export function animation(plan, str, masses, stepTitle) {
             }
         }
         else if (p.kind === "cut" || p.kind === "focus") {
-            // The knife goes through first and the pieces come apart around the middle; then the
-            // one you carry on with slides to the centre while the rest drift off and fade —
-            // that is what goes in the fridge. The block is always drawn whole size here, so
-            // nothing jumps between the two phases.
             const n = p.pieces;
             const cutting = p.kind === "cut";
             const fullW = p.a.l * scale;
@@ -173,7 +139,6 @@ export function animation(plan, str, masses, stepTitle) {
             const slice = (p.cutAcross ? fullH : fullW) / n;
             const gap = cutting ? Math.max(0, u - 0.45) * 24 : 12 + 120 * u;
             const keepOff = (-(n - 1) / 2) * gap;
-            // Cancelling the kept piece's own offset is what walks it back to the middle.
             const shift = cutting ? 0 : -keepOff * u;
             for (let k = 0; k < n; k++) {
                 const off = (k - (n - 1) / 2) * gap + shift;
@@ -193,22 +158,15 @@ export function animation(plan, str, masses, stepTitle) {
                 }
         }
         else {
-            // While the flaps fold, what stays on the bench is the dough under the butter.
             const baseW = p.kind === "wrap" ? plan.butterSheet.length * scale : pw;
             body.appendChild(svgEl("rect", { x: CX - baseW / 2, y, width: baseW, height: ph, rx: 3, class: "sheet" }));
             if (p.kind === "trim") {
-                // The margin comes off the two ends. This is the *rifilo* — the only cut in the plan
-                // that removes dough — and not the relief cuts, which remove nothing and are a
-                // gesture this view cannot show: it draws a fold as panels sliding onto a stack, so
-                // there is no closed fold at the ends to open. The 3D view has that beat.
                 const cut = ((p.a.l - p.b.l) / 2) * scale * (1 - u);
                 for (const sx of [x - cut, x + pw])
                     if (cut > 0.5)
                         body.appendChild(svgEl("rect", { x: sx, y, width: cut, height: ph, rx: 2, class: "offcut" }));
             }
             if (isPackage(p) && p.kind !== "appear") {
-                // The butter slab, at its own size, in the middle of the sheet; then the two outer
-                // flaps come over it from both sides and meet in the centre, covering it exactly.
                 const bl = plan.butterSheet.length * scale;
                 const bw2 = plan.butterSheet.width * scale;
                 const appear = p.kind === "place" ? Math.min(1, u * 1.6) : 1;
@@ -223,7 +181,6 @@ export function animation(plan, str, masses, stepTitle) {
                 }));
                 if (p.kind === "wrap")
                     for (const side of [-1, 1]) {
-                        // Each flap is half the butter's length and slides in over it.
                         const flap = bl / 2;
                         const fromX = side < 0 ? CX - bl : CX + bl / 2;
                         const toX = side < 0 ? CX - flap : CX;
@@ -231,10 +188,6 @@ export function animation(plan, str, masses, stepTitle) {
                     }
             }
             if (p.kind === "shape" && u > 0.55) {
-                // Only the first strip is on the bench, and the strips are not interchangeable: the
-                // pain au chocolat are spent on the first ones, so the rest come out all croissants.
-                // Without saying so, one strip of nine pain au chocolat times six strips reads as
-                // fifty-four of them.
                 const note = svgEl("text", { x: CX, y: CY + ph / 2 + 54, class: "sharenote" });
                 note.textContent =
                     fillIn(str.share, { n: plan.strips, pac: share.pac, cro: share.croissants }) +
@@ -243,8 +196,6 @@ export function animation(plan, str, masses, stepTitle) {
                             : "");
                 note.setAttribute("opacity", String(Math.min(1, (u - 0.55) * 6)));
                 g.appendChild(note);
-                // What this strip is actually cut into. Pain au chocolat first, in the order the
-                // plan allocates them, then triangles in whatever length is left.
                 let at = x;
                 if (share.pac > 0) {
                     const pw2 = plan.pac.width * scale;
@@ -263,8 +214,6 @@ export function animation(plan, str, masses, stepTitle) {
                 if (share.croissants > 0 && rest > 0) {
                     const n = Math.min(share.croissants, trianglesInStrip(rest, base, plan.croissant.cutStyle));
                     if (plan.croissant.cutStyle === "diagonal") {
-                        // Rectangles one base wide, each split corner to corner: two right triangles,
-                        // mirror images of each other.
                         const bw3 = base * scale;
                         for (let k = 0; k < Math.ceil(n / 2); k++) {
                             const fx = at + bw3 * k;
@@ -274,7 +223,6 @@ export function animation(plan, str, masses, stepTitle) {
                         }
                     }
                     else {
-                        // Alternating isosceles triangles, tip up and tip down.
                         const half = (base / 2) * scale;
                         for (let k = 0; k < n; k++) {
                             const fx = at + half * k;
@@ -287,7 +235,6 @@ export function animation(plan, str, masses, stepTitle) {
                 }
             }
         }
-        // ---- measurements
         const dimLine = (x1, y1, x2, y2, text, anchor) => {
             g.appendChild(svgEl("line", { x1, y1, x2, y2, class: "dim" }));
             const label = svgEl("text", {
@@ -298,39 +245,28 @@ export function animation(plan, str, masses, stepTitle) {
             label.textContent = text;
             g.appendChild(label);
         };
-        // Halfway through the turn the labels change places, following the block round: what
-        // was the length is now the side under the pin.
         const lw = turning && u > 0.5 ? topW : topL;
         const lh = turning && u > 0.5 ? topL : topW;
         const bw = (turning ? Math.max(pw, ph) : pw) / 2;
         const bh = (turning ? Math.max(pw, ph) : ph) / 2;
         dimLine(CX - bw, CY + bh + 26, CX + bw, CY + bh + 26, `${r1(lw)} cm`, "mid");
         dimLine(CX - bw - 16, CY - bh, CX - bw - 16, CY + bh, `${r1(lh)} cm`, "left");
-        // ---- edge view: the block seen from the side, so rolling and folding show what they
-        // do to the thickness. The length is to scale with the top view, the thickness is not —
-        // 4 mm would be invisible next to a 125 cm sheet.
         let eh = Math.max(2, t * tScale);
         let el2 = (turning ? lerp(p.a.l, p.b.l, u) : lw) * scale;
         let ex = CX - el2 / 2;
         let ey = EDGE_Y - eh;
         if (isPackage(p)) {
-            // Step 0 is the one place where the three layers are separate things you can see:
-            // the dough lies flat, the slab sits on top of its middle, and the two ends lift off
-            // the bench, swing over and come down on top of the butter. Drawing it as a uniform
-            // block would hide exactly the gesture.
             const dth = plan.doughSheet.t * tScale;
             const bth = plan.butterSheet.thickness * tScale;
             const fullL = plan.doughSheet.l * scale;
             const midL = plan.butterSheet.length * scale;
             const placed = p.kind !== "appear";
             const wrapping = p.kind === "wrap";
-            // The stack as it stands: dough, plus butter once it is on, plus the flaps as they land.
             const stack = plan.doughSheet.t + (placed ? plan.butterSheet.thickness : 0) + (wrapping ? plan.doughSheet.t * u : 0);
             eh = stack * tScale;
             el2 = (p.kind === "appear" ? l * scale : wrapping ? lerp(fullL, midL, u) : fullL);
             ex = CX - el2 / 2;
             ey = EDGE_Y - eh;
-            // the dough on the bench: the whole sheet, or just the middle once the ends lift
             const baseL = wrapping ? midL : el2;
             const baseH = p.kind === "appear" ? Math.max(2, t * tScale) : dth;
             g.appendChild(svgEl("rect", { x: CX - baseL / 2, y: EDGE_Y - baseH, width: baseL, height: baseH, rx: 1, class: "edgeblock" }));
@@ -348,7 +284,6 @@ export function animation(plan, str, masses, stepTitle) {
                     const flap = midL / 2;
                     const fromX = side < 0 ? CX - fullL / 2 : CX + midL / 2;
                     const toX = side < 0 ? CX - midL / 2 : CX;
-                    // A little arc, so the flap reads as lifting off the bench rather than sliding.
                     const lift = Math.sin(Math.PI * u) * 14;
                     g.appendChild(svgEl("rect", {
                         x: lerp(fromX, toX, u),
@@ -362,8 +297,6 @@ export function animation(plan, str, masses, stepTitle) {
         }
         else {
             g.appendChild(svgEl("rect", { x: ex, y: ey, width: el2, height: eh, rx: 1, class: "edgeblock" }));
-            // The butter sheets inside the dough: `layers` of them, each one the butter's share of
-            // the thickness divided by how many there are, with dough above, below and between.
             const bth = (eh * butterFrac) / layers;
             const dth = (eh * (1 - butterFrac)) / (layers + 1);
             for (let k = 0; k < layers; k++) {
@@ -380,11 +313,7 @@ export function animation(plan, str, masses, stepTitle) {
         const edgeNote = svgEl("text", { x: CX, y: EDGE_Y + 20, class: "edgenote" });
         edgeNote.textContent = layers > 1 ? `${str.edge} — ${layers} ${str.layers}` : str.edge;
         g.appendChild(edgeNote);
-        // ---- what is in front of you, in grams. It holds still through a roll-out, because
-        // rolling conserves it, and runs down when the ends are trimmed or the other pieces go.
         const gNow = lerp(p.gA, p.gB, u);
-        // The batch multiplier: a split throws nothing away, it means the rest of the plan is
-        // done once per piece. The two tspans keep the "×2" glued to the number.
         const n = p.kind === "focus" ? (u > 0.45 ? p.nB : p.nA) : p.nA;
         const counter = svgEl("text", { x: PAD - 10, y: 38, class: "counter" });
         const amount = svgEl("tspan");
@@ -397,14 +326,10 @@ export function animation(plan, str, masses, stepTitle) {
         }
         g.appendChild(counter);
         const label = svgEl("text", { x: PAD - 10, y: 56, class: "counterlabel" });
-        // Mid-split the number and the multiplier are briefly out of step, so the total is read
-        // off the block that went into the cut: it is exactly what you still have, in pieces.
         const all = p.kind === "focus" ? p.gA : gNow * n;
         label.textContent = n > 1 ? `${str.onBench} · ${Math.round(all)} g ${str.inAll}` : str.onBench;
         g.appendChild(label);
         if (p.gB < p.gA - 0.5) {
-            // What is leaving, while it leaves. A trimmed end is waste; the other pieces are
-            // only going to the fridge, which is not the same thing and should not look like it.
             const aside = p.kind === "focus";
             const gone = svgEl("text", { x: PAD - 10, y: 78, class: `counterdrop${aside ? " aside" : ""}` });
             gone.textContent = `−${Math.round(p.gA - gNow)} g ${aside ? str.toFridge : str.waste}`;
@@ -416,20 +341,16 @@ export function animation(plan, str, masses, stepTitle) {
         chips.forEach((b, k) => b.classList.toggle("on", k === chapterAt(chapters, time)));
         return i;
     };
-    // ---- playback
     let time = 0;
     let playing = false;
     let raf = 0;
     let last = 0;
-    // Where the current run has to stop: the end of one chapter, or the end of everything.
     let stopAt = total;
     const setPlaying = (on) => {
         playing = on;
         playBtn.textContent = on ? "⏸" : time >= total - 1e-6 ? "↺" : "▶";
         playBtn.title = on ? str.pause : time >= total - 1e-6 ? str.replay : str.play;
     };
-    // Cues follow the phase boundaries, and only while it is running: dragging the scrub
-    // through six steps should not fire thirty sounds.
     let sounded = -1;
     const frame = (now) => {
         const dt = last ? (now - last) / 1000 : 0;
@@ -441,7 +362,6 @@ export function animation(plan, str, masses, stepTitle) {
             if (at !== sounded) {
                 sounded = at;
                 const q = phases[at];
-                // The step index is the scale degree the phase sits on, so the run climbs.
                 phaseSound(q.kind, { step: degreeOf(q.step), count: q.pieces });
             }
             if (time >= stopAt) {
@@ -455,7 +375,6 @@ export function animation(plan, str, masses, stepTitle) {
     const playRange = (from, to) => {
         primeSound();
         sounded = -1;
-        // Stopping exactly on a chapter boundary would already be the next step's first frame.
         stopAt = to < total ? to - 1e-3 : to;
         time = from;
         scrub.value = String((from / total) * 1000);
@@ -467,7 +386,6 @@ export function animation(plan, str, masses, stepTitle) {
             setPlaying(false);
             return;
         }
-        // Pressing play after a chapter carries on to the end rather than replaying that chapter.
         playRange(time >= total - 1e-6 ? 0 : time, total);
     });
     chips.forEach((b, i) => b.addEventListener("click", () => playRange(chapters[i].from, chapters[i].to)));
