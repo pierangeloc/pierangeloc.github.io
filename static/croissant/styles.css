@@ -1,0 +1,612 @@
+:root {
+  --bg: #0b0b0c;
+  --panel: #151517;
+  --row: #1d1d20;
+  --row-hi: #26262a;
+  --fillbar: #34343a;
+  --ink: #ededf0;
+  --muted: #8b8b93;
+  --line: #2a2a2f;
+  --accent: #d8a657;
+  /* Butter has to read against the dough, and the dough is drawn in the accent gold. */
+  --butter: #f6edcd;
+  /* The dough as a solid mass, for the 3D view: the accent gold knocked back, so that
+     twelve butter layers still read as the lighter thing inside it. */
+  --dough: #c08f4a;
+  /* Pain au chocolat, so the two products are told apart at a glance. */
+  --choc: #a9714a;
+  --bad: #e06c63;
+  --ok: #7fb069;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 28px 24px 16px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+header h1 { margin: 0; font-size: 28px; font-weight: 650; letter-spacing: -0.01em; }
+header p { margin: 4px 0 0; color: var(--muted); }
+.tools { display: flex; gap: 8px; align-items: center; }
+.langs { display: flex; background: var(--row); border-radius: 8px; padding: 2px; }
+.langs button {
+  background: none; border: 0; color: var(--muted); font: inherit; font-size: 12px;
+  font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer;
+}
+.langs button.on { background: var(--row-hi); color: var(--ink); }
+
+.resetbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--row);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 6px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, opacity 0.15s;
+}
+.resetbtn:hover:not(:disabled) { border-color: var(--accent); }
+.resetbtn:disabled { opacity: 0.4; cursor: default; }
+.resetbtn .ico { font-size: 14px; line-height: 1; }
+.resetbtn .count:not(:empty) {
+  min-width: 17px;
+  padding: 1px 5px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #1a1407;
+  font-size: 11px;
+  font-weight: 650;
+  text-align: center;
+}
+
+.iconbtn {
+  background: none; border: 0; color: var(--muted); cursor: pointer;
+  font-size: 15px; padding: 4px 7px; border-radius: 6px; line-height: 1;
+}
+.iconbtn:hover { background: var(--row-hi); color: var(--ink); }
+
+main {
+  display: grid;
+  grid-template-columns: 400px minmax(0, 1fr);
+  gap: 24px;
+  padding: 0 24px 48px;
+  max-width: 1500px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* ---- panel ---- */
+
+#panel { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 16px; }
+
+.sec { background: var(--panel); border-radius: var(--radius); padding: 10px; }
+.sechead { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 8px; }
+.sechead h2 {
+  margin: 0; font-size: 10.5px; font-weight: 650; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--muted);
+}
+.sechead .iconbtn { opacity: 0; transition: opacity 0.12s, color 0.12s; }
+.sec:hover .sechead .iconbtn { opacity: 0.55; }
+.sec.dirty .sechead .iconbtn { opacity: 1; color: var(--accent); }
+.sec:hover .sechead .iconbtn:hover { opacity: 1; }
+.secbody { display: flex; flex-direction: column; gap: 1px; }
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 6px 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.row:hover { border-color: var(--fillbar); }
+.row:focus-visible { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+
+.label {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.dot {
+  width: 5px; height: 5px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--accent); opacity: 0; cursor: pointer; flex: none;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.row.modified .dot { opacity: 1; }
+.row.modified .dot:hover { transform: scale(1.8); }
+
+.value {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.unit { color: var(--muted); font-size: 12.5px; }
+
+/* ---- outlined number field ---- */
+
+.secbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px 10px;
+  padding: 6px 6px 4px;
+}
+.secbody > .row { grid-column: 1 / -1; }
+
+.field { position: relative; min-width: 0; }
+
+.flabel {
+  position: absolute;
+  top: -6px;
+  left: 9px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 18px);
+  padding: 0 4px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+}
+.flabel:hover, .flabel.scrubbing { color: var(--ink); }
+.field.error .flabel { color: var(--bad); }
+
+.box {
+  display: flex;
+  align-items: stretch;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  transition: border-color 0.15s;
+}
+.box:hover { border-color: var(--fillbar); }
+.box:focus-within { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.field.error .box { border-color: var(--bad); }
+.field.error .box:focus-within { box-shadow: inset 0 0 0 1px var(--bad); }
+
+.num {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--ink);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  padding: 0 2px 0 10px;
+}
+.box .unit {
+  display: flex;
+  align-items: center;
+  padding-right: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.steppers {
+  display: flex;
+  flex-direction: column;
+  width: 24px;
+  border-left: 1px solid var(--line);
+}
+.stepbtn {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--muted);
+  cursor: pointer;
+}
+.stepbtn svg { width: 9px; height: 5.5px; }
+.stepbtn:hover:not(:disabled) { color: var(--ink); background: var(--row); }
+.stepbtn:first-child { border-radius: 0 6px 0 0; }
+.stepbtn:last-child { border-radius: 0 0 6px 0; border-top: 1px solid var(--line); }
+.stepbtn:disabled { opacity: 0.25; cursor: default; }
+
+.helper {
+  margin: 4px 0 0;
+  padding: 0 2px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.3;
+  min-height: 1px;
+}
+.field.error .helper { color: var(--bad); }
+
+.field .dot {
+  width: 5px; height: 5px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--accent); opacity: 0; cursor: pointer; flex: none;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.field.modified .dot { opacity: 1; }
+.field.modified .dot:hover { transform: scale(1.8); }
+
+/* two fields that belong together */
+.pair {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 6px;
+}
+.link {
+  margin-top: 10px;
+  background: none; border: 0; cursor: pointer; color: var(--muted); opacity: 0.45;
+  font-size: 12px; padding: 3px 4px; border-radius: 5px; line-height: 1;
+}
+.link:hover { opacity: 1; }
+.link.on { opacity: 1; color: var(--accent); background: var(--fillbar); }
+
+.inline {
+  width: 72px; background: var(--bg); border: 1px solid var(--accent); color: var(--ink);
+  font: inherit; font-variant-numeric: tabular-nums; text-align: right;
+  border-radius: 5px; padding: 2px 5px; outline: none;
+}
+
+/* ---- choice ---- */
+
+.seg { position: relative; display: flex; gap: 2px; }
+.segbtn {
+  position: relative; background: none; border: 0; color: var(--muted); font: inherit;
+  font-variant-numeric: tabular-nums; padding: 4px 8px; border-radius: 6px; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.segbtn:hover { color: var(--ink); }
+.segbtn.on { background: var(--row-hi); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.row.choice:hover .segbtn.on { background: var(--fillbar); }
+.segbtn:focus { outline: none; }
+.row.toggle, .row.choice { gap: 10px; }
+.row.choice .label { white-space: normal; }
+.badge {
+  position: absolute; top: -7px; left: -5px; width: 13px; height: 13px; line-height: 13px;
+  border-radius: 50%; background: var(--fillbar); color: var(--ink); font-size: 9px;
+  text-align: center; opacity: 0; transition: opacity 0.12s;
+}
+.row.choice:hover .badge, .row.choice:focus-within .badge { opacity: 1; }
+.segbtn:focus-visible { outline: none; color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent); }
+.row.choice:focus-within .segbtn.on { background: var(--fillbar); }
+
+/* ---- toggle ---- */
+
+.switch {
+  width: 38px; height: 21px; border-radius: 11px; border: 0; background: var(--fillbar);
+  position: relative; cursor: pointer; padding: 0; transition: background 0.2s;
+}
+.switch.on { background: var(--accent); }
+.switch .knob {
+  position: absolute; top: 2.5px; left: 2.5px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; transition: transform 0.26s cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+.switch.on .knob { transform: translateX(17px); }
+
+/* ---- vec2 ---- */
+
+.link {
+  background: none; border: 0; cursor: pointer; color: var(--muted); opacity: 0.45;
+  font-size: 13px; padding: 2px 4px; border-radius: 5px;
+}
+.link:hover { opacity: 1; }
+.link.on { opacity: 1; color: var(--accent); background: var(--fillbar); }
+
+/* ---- output ---- */
+
+#out { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.status .tag {
+  display: inline-block; font-size: 11px; font-weight: 650; letter-spacing: 0.05em;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 20px;
+}
+.status.ok .tag { background: rgba(127, 176, 105, 0.15); color: var(--ok); }
+.status.bad .tag { background: rgba(224, 108, 99, 0.15); color: var(--bad); }
+
+.warnings {
+  background: rgba(224, 108, 99, 0.09);
+  border-left: 2px solid var(--bad);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 16px;
+}
+.warnings h3 {
+  margin: 0 0 4px; font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--bad);
+}
+.warnings ul { margin: 0; padding-left: 18px; }
+.warnings li { margin: 2px 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 13.5px;
+}
+th {
+  text-align: left; font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600; padding: 9px 12px; background: var(--row);
+}
+td { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+td:first-child { min-width: 7.5em; }
+td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
+/* Every roll-out of a candidate, one per line: the numbers have to line up to be read
+   down the column, and the line breaks come from the text itself. */
+.tablescroll { overflow-x: auto; border-radius: var(--radius); }
+
+/* The options table: one row per step, grouped into candidates. The rule between rows is
+   drawn only where a candidate starts, so a group reads as one block, and what belongs to
+   the whole candidate (strip, yield, button) spans its rows. */
+.opts th { padding: 9px 8px; }
+.opts td { border-top: none; padding: 4px 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.opts tr.first td { border-top: 1px solid var(--line); padding-top: 9px; }
+.opts tr.last td { padding-bottom: 9px; }
+.opts td:first-child, .opts th:first-child { min-width: 0; }
+.opts .n { color: var(--muted); font-size: 12px; }
+.opts .pin, .opts .from { text-align: right; }
+.opts .pin { color: var(--muted); }
+.opts .to { text-align: right; color: var(--accent); }
+.opts .mm { color: var(--muted); font-size: 12px; text-align: right; }
+/* A cut spans the roll-out columns, so it is centred on them rather than borrowing the
+   right alignment the action column asks for. */
+.opts td.cut { color: var(--muted); text-align: center; }
+.opts .strip, .opts td.act { vertical-align: top; }
+/* The cells that span a candidate sit against its first line, not in the middle of it. */
+.opts tr.first .strip, .opts tr.first .act { padding-top: 9px; }
+.opts tbody tr:hover { background: none; }
+
+/* The combination the plan is on: a gold edge round the whole group of its rows. */
+.opts tr.applied td { background: var(--row-hi); }
+.opts tr.applied.first td { border-top: 1px solid var(--accent); }
+.opts tr.applied td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+.opts tr.applied.last td { box-shadow: inset 0 -1px 0 var(--accent); }
+.opts tr.applied.last td:first-child { box-shadow: inset 2px 0 0 var(--accent), inset 0 -1px 0 var(--accent); }
+/* The cells that span the group close its box on the bottom and on the right: they sit in
+   the group's first row, so the rules keyed on its last row never reach them. */
+.opts tr.applied td[rowspan] { box-shadow: inset 0 -1px 0 var(--accent); }
+.opts tr.applied td.act { box-shadow: inset 0 -1px 0 var(--accent), inset -2px 0 0 var(--accent); }
+
+.line { margin: 0; color: var(--muted); font-size: 13.5px; }
+.yield { background: var(--panel); border-radius: var(--radius); padding: 14px 16px; }
+.yield p { margin: 3px 0; }
+.yield .big { font-size: 16px; font-weight: 600; }
+.yield .muted, .muted { color: var(--muted); font-size: 13px; }
+
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; }
+  #panel { position: static; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .box, .dot, .switch .knob { transition: none; }
+}
+
+/* ---- section note and the suggested fix ---- */
+
+.secnote {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.fix {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.fix.none { color: var(--muted); }
+.applyfix {
+  flex: none;
+  background: var(--fillbar); color: var(--ink); font: inherit; font-size: 12px;
+  border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; cursor: pointer;
+  white-space: nowrap;
+}
+.applyfix:hover { border-color: var(--accent); }
+
+/* ---- animation stage ---- */
+
+.animbox {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px 10px;
+  background: var(--panel);
+}
+.animbox h3 {
+  margin: 0 0 6px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+}
+.stage { width: 100%; height: auto; display: block; background: var(--bg); border-radius: 8px; }
+.stage .sheet { fill: var(--row-hi); stroke: var(--accent); stroke-width: 1.5; }
+.stage .sheet.aside { fill: var(--panel); stroke: var(--fillbar); }
+.stage .offcut { fill: none; stroke: var(--bad); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.stage .foldline { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 5 4; opacity: 0.7; }
+.stage .tri { fill: none; stroke: var(--ok); stroke-width: 1; }
+.stage .dim { stroke: var(--muted); stroke-width: 1; }
+.stage .dimtext { fill: var(--muted); font-size: 13px; font-family: inherit; }
+.stage .dimtext.mid { text-anchor: middle; }
+.stage .dimtext.left { text-anchor: end; dominant-baseline: middle; }
+.stage .info { fill: var(--ink); font-size: 16px; font-family: inherit; }
+.stage .infosub { fill: var(--muted); font-size: 12px; font-family: inherit; }
+
+.animbar { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.animbtn {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--row-hi); color: var(--ink); border: 1px solid var(--line);
+  font: inherit; font-size: 13px; cursor: pointer;
+}
+.animbtn:hover { border-color: var(--accent); }
+.animscrub { flex: 1; accent-color: var(--accent); min-width: 0; }
+.animcap { flex: none; color: var(--muted); font-size: 12px; min-width: 14em; text-align: right; }
+.stage .butter { fill: var(--butter); opacity: 0.85; stroke: var(--butter); stroke-width: 1; }
+.stage .knife { stroke: var(--bad); stroke-width: 2; stroke-dasharray: 8 5; }
+.stage .panel { stroke-width: 1.2; }
+.stage .edgeblock { fill: var(--row-hi); stroke: var(--accent); stroke-width: 1.2; }
+.stage .edgelayer { stroke: var(--butter); stroke-width: 0.7; opacity: 0.8; }
+.stage .sharenote { fill: var(--muted); font-size: 12px; font-family: inherit; text-anchor: middle; }
+.stage .edgenote { fill: var(--muted); font-size: 11px; font-family: inherit; text-anchor: middle; }
+.stage .edgebutter { fill: var(--butter); }
+.stage .flap { fill: var(--row-hi); fill-opacity: 0.95; }
+
+/* ---- animation chapters ---- */
+
+.chapters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chapter {
+  background: none; color: var(--muted); font: inherit; font-size: 12px;
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.chapter:hover { color: var(--ink); border-color: var(--fillbar); }
+.chapter.on { background: var(--row-hi); color: var(--ink); border-color: var(--accent); }
+.animbtn.mute { font-size: 12px; }
+.animbtn.mute.off { color: var(--muted); }
+.stage .counter { fill: var(--ink); font-size: 20px; font-family: inherit; font-variant-numeric: tabular-nums; }
+.stage .counterlabel { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.stage .counterdrop { fill: var(--bad); font-size: 13px; font-family: inherit; font-variant-numeric: tabular-nums; }
+.stage .counterdrop.aside { fill: var(--muted); }
+.stage .countertimes { fill: var(--accent); font-size: 15px; }
+
+/* ---- combinations for a wanted height ---- */
+
+.options {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--panel);
+}
+.options h3 {
+  margin: 0 0 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+}
+/* The action column, not "whatever cell happens to be last": a cut row ends early. */
+.options td.act { text-align: right; }
+.options .muted { margin: 8px 0 0; font-size: 12px; }
+.stage .pac { fill: var(--choc); fill-opacity: 0.35; stroke: var(--choc); stroke-width: 1; }
+.secnote.bad { color: var(--bad); }
+
+/* ---- animation tabs: the flat view and the 3D one ---- */
+
+.animhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.animtabs { display: flex; gap: 4px; }
+.animtab {
+  background: none; border: 1px solid var(--line); color: var(--muted);
+  border-radius: 999px; padding: 3px 12px; font: inherit; font-size: 12px; cursor: pointer;
+}
+.animtab:hover { color: var(--ink); border-color: var(--fillbar); }
+.animtab.on { background: var(--row-hi); color: var(--ink); border-color: var(--accent); }
+
+/* ---- the 3D stage ---- */
+
+.threestage {
+  position: relative;
+  background: var(--bg);
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 260px;
+}
+.threestage canvas { display: block; width: 100%; height: auto; touch-action: none; cursor: grab; }
+.threestage canvas:active { cursor: grabbing; }
+.threehud {
+  position: absolute; top: 10px; left: 12px; pointer-events: none;
+  display: flex; flex-direction: column; gap: 2px;
+  font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.threehud .hudstep { color: var(--ink); }
+.threehud .hudbig { color: var(--butter); font-size: 20px; }
+.threehud .hudnose { color: var(--accent); }
+.threehud .hudwarn { color: var(--bad); }
+/* The one declared vertical scale, always in the frame — as the flat view's edge note says
+   "spessore fuori scala", this says by how much. */
+.threenote {
+  position: absolute; right: 12px; bottom: 10px; pointer-events: none;
+  font-size: 11px; color: var(--muted); max-width: 55%; text-align: right;
+}
+.threetools { display: flex; gap: 4px; margin-left: auto; }
+
+/* ---- the fold plan: one box per turn, as many as the plan has ---- */
+
+.turn {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 6px 4px;
+  margin-bottom: 4px;
+}
+.turn h4 {
+  margin: 0 0 2px 5px; font-size: 10px; font-weight: 650; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--muted);
+}
+/* six options and a label do not fit side by side in one column of the panel's grid,
+     so inside a turn the label goes above its options */
+.turn .row { border: 0; min-height: 0; flex-direction: column; align-items: stretch; gap: 1px; padding: 2px 5px 4px; }
+.turn .row .fill { width: 100%; }
+.turn .row .label { font-size: 11px; color: var(--muted); }
+.turn .seg { justify-content: flex-start; }
+.turn .segbtn { padding: 3px 7px; }
+.turn .field { margin: 10px 5px 4px; }
+/* The × sits on the turn it removes, and only the last turn has one. */
+.turnrm {
+  position: absolute; top: 4px; right: 4px;
+  background: none; border: 0; cursor: pointer; color: var(--muted);
+  font-size: 13px; line-height: 1; padding: 2px 5px; border-radius: 5px; opacity: 0;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+.turn:hover .turnrm { opacity: 0.5; }
+.turnrm:hover { opacity: 1; color: var(--bad); background: var(--row-hi); }
+.addturn {
+  width: 100%; background: none; border: 1px dashed var(--line); border-radius: 7px;
+  color: var(--muted); font: inherit; font-size: 12px; padding: 6px; cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.addturn:hover { border-color: var(--accent); color: var(--ink); }
+.secbody > .addturn, .secbody > .presets, .secbody > .turn { grid-column: span 1; }
+.presets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px 6px 2px; }
+.presets .label { color: var(--muted); font-size: 11px; }
+.preset {
+  background: var(--row-hi); border: 1px solid var(--line); border-radius: 6px;
+  color: var(--ink); font: inherit; font-size: 12px; padding: 4px 9px; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.preset:hover { border-color: var(--accent); background: var(--fillbar); }

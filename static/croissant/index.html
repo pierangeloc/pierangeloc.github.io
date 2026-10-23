@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sfogliatura</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <!-- three.js comes from a CDN, never npm, and only when the 3D tab is opened. The map is
+         here because OrbitControls imports the bare "three" specifier. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
+          "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.js",
+          "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1 id="title">Sfogliatura</h1>
+        <p id="subtitle"></p>
+      </div>
+      <div class="tools">
+        <button type="button" id="resetAll" class="resetbtn">
+          <span class="ico">↺</span><span class="txt"></span><span class="count"></span>
+        </button>
+        <div class="langs">
+          <button type="button" data-lang="it">IT</button>
+          <button type="button" data-lang="en">EN</button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <aside id="panel"></aside>
+      <div id="out"></div>
+    </main>
+    <script type="module" src="./web/app.js"></script>
+  </body>
+</html>
