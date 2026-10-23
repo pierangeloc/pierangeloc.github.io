@@ -1,12 +1,15 @@
 :root {
-  --bg: #0b0b0c;
-  --panel: #151517;
-  --row: #1d1d20;
-  --row-hi: #26262a;
-  --fillbar: #34343a;
-  --ink: #ededf0;
-  --muted: #8b8b93;
-  --line: #2a2a2f;
+  /* The greys are the HugoTeX theme's own dark mode — body hsl(0,0%,16%) on text
+     hsl(0,0%,86%) — so the page reads as part of the blog rather than as a window cut into
+     it. The blog itself is light; this one stays dark, which the theme also supports. */
+  --bg: #292929;
+  --panel: #303030;
+  --row: #383838;
+  --row-hi: #454545;
+  --fillbar: #585858;
+  --ink: #dbdbdb;
+  --muted: #9a9a9a;
+  --line: #474747;
   --accent: #d8a657;
   /* Butter has to read against the dough, and the dough is drawn in the accent gold. */
   --butter: #f6edcd;
@@ -17,7 +20,9 @@
   --choc: #a9714a;
   --bad: #e06c63;
   --ok: #7fb069;
-  --radius: 10px;
+  /* TeX does not round its boxes. Not zero: a hair of a radius keeps the panels from
+     looking like they were drawn by a different program than the rest of the page. */
+  --radius: 3px;
 }
 
 * { box-sizing: border-box; }
@@ -26,7 +31,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 15px/1.45 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 15px/1.42 "Latin Modern", Georgia, Cambria, "Times New Roman", Times, serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -39,7 +44,7 @@ header {
   max-width: 1500px;
   margin: 0 auto;
 }
-header h1 { margin: 0; font-size: 28px; font-weight: 650; letter-spacing: -0.01em; }
+header h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: 0; }
 header p { margin: 4px 0 0; color: var(--muted); }
 .tools { display: flex; gap: 8px; align-items: center; }
 .langs { display: flex; background: var(--row); border-radius: 8px; padding: 2px; }
@@ -101,8 +106,8 @@ main {
 .sec { background: var(--panel); border-radius: var(--radius); padding: 10px; }
 .sechead { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 8px; }
 .sechead h2 {
-  margin: 0; font-size: 10.5px; font-weight: 650; letter-spacing: 0.09em;
-  text-transform: uppercase; color: var(--muted);
+  margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
+  font-variant-caps: small-caps; color: var(--muted);
 }
 .sechead .iconbtn { opacity: 0; transition: opacity 0.12s, color 0.12s; }
 .sec:hover .sechead .iconbtn { opacity: 0.55; }
@@ -334,8 +339,8 @@ main {
 #out { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
 .status .tag {
-  display: inline-block; font-size: 11px; font-weight: 650; letter-spacing: 0.05em;
-  text-transform: uppercase; padding: 4px 10px; border-radius: 20px;
+  display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
+  font-variant-caps: small-caps; padding: 3px 10px; border-radius: 2px;
 }
 .status.ok .tag { background: rgba(127, 176, 105, 0.15); color: var(--ok); }
 .status.bad .tag { background: rgba(224, 108, 99, 0.15); color: var(--bad); }
@@ -343,29 +348,34 @@ main {
 .warnings {
   background: rgba(224, 108, 99, 0.09);
   border-left: 2px solid var(--bad);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 2px 2px 0;
   padding: 10px 16px;
 }
 .warnings h3 {
-  margin: 0 0 4px; font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase;
-  color: var(--bad);
+  margin: 0 0 4px; font-size: 13.5px; letter-spacing: 0.03em; font-variant-caps: small-caps;
+  font-weight: 700; color: var(--bad);
 }
 .warnings ul { margin: 0; padding-left: 18px; }
 .warnings li { margin: 2px 0; }
 
+/* Booktabs, the way a LaTeX table is set: a thick rule top and bottom, a thin one under the
+   column heads, and no vertical rules at all — the columns are held apart by their spacing,
+   not by lines. The head loses its filled band for the same reason. */
 table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--panel);
-  border-radius: var(--radius);
-  overflow: hidden;
+  background: none;
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
   font-size: 13.5px;
 }
 th {
-  text-align: left; font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase;
-  color: var(--muted); font-weight: 600; padding: 9px 12px; background: var(--row);
+  text-align: left; font-size: 12.5px; letter-spacing: 0.03em;
+  font-variant-caps: small-caps;
+  color: var(--ink); font-weight: 700; padding: 7px 12px;
+  background: none; border-bottom: 0.8px solid var(--ink);
 }
-td { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+td { padding: 7px 12px; border-top: 0.8px solid var(--line); vertical-align: top; }
 td:first-child { min-width: 7.5em; }
 td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 /* Every roll-out of a candidate, one per line: the numbers have to line up to be read
@@ -454,7 +464,7 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 }
 .animbox h3 {
   margin: 0 0 6px;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: 13.5px; font-weight: 700; letter-spacing: 0.03em; font-variant-caps: small-caps;
   color: var(--muted);
 }
 .stage { width: 100%; height: auto; display: block; background: var(--bg); border-radius: 8px; }
@@ -494,7 +504,7 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 .chapters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .chapter {
   background: none; color: var(--muted); font: inherit; font-size: 12px;
-  border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer;
+  border: 0.8px solid var(--line); border-radius: 2px; padding: 3px 10px; cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .chapter:hover { color: var(--ink); border-color: var(--fillbar); }
@@ -517,7 +527,7 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 }
 .options h3 {
   margin: 0 0 8px;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: 13.5px; font-weight: 700; letter-spacing: 0.03em; font-variant-caps: small-caps;
   color: var(--muted);
 }
 /* The action column, not "whatever cell happens to be last": a cut row ends early. */
@@ -532,7 +542,7 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 .animtabs { display: flex; gap: 4px; }
 .animtab {
   background: none; border: 1px solid var(--line); color: var(--muted);
-  border-radius: 999px; padding: 3px 12px; font: inherit; font-size: 12px; cursor: pointer;
+  border-radius: 2px; padding: 3px 12px; font: inherit; font-size: 13px; cursor: pointer;
 }
 .animtab:hover { color: var(--ink); border-color: var(--fillbar); }
 .animtab.on { background: var(--row-hi); color: var(--ink); border-color: var(--accent); }
@@ -575,8 +585,8 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
   margin-bottom: 4px;
 }
 .turn h4 {
-  margin: 0 0 2px 5px; font-size: 10px; font-weight: 650; letter-spacing: 0.09em;
-  text-transform: uppercase; color: var(--muted);
+  margin: 0 0 2px 5px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em;
+  font-variant-caps: small-caps; color: var(--muted);
 }
 /* six options and a label do not fit side by side in one column of the panel's grid,
      so inside a turn the label goes above its options */
