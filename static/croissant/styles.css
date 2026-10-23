@@ -1,3 +1,32 @@
+/* Latin Modern, the Computer Modern descendant TeX sets its documents in. The page is served
+   from inside a blog that uses the HugoTeX theme, so the first source is that theme's own font
+   files: same origin, same bytes, and the page is then set in exactly the typeface the rest of
+   the site is. The CDN copy is the fallback, which is what answers when the page is opened on
+   its own — a local build has no /css/fonts — and Georgia answers if neither can be reached.
+
+   Note that `document.fonts.check()` cannot verify this: with no matching @font-face it
+   returns true, having nothing to load. Measure a glyph's width instead. */
+@font-face {
+  font-family: "Latin Modern"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("/css/fonts/LM-regular.woff2") format("woff2"),
+       url("https://cdn.jsdelivr.net/npm/latex.css/fonts/LM-regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Latin Modern"; font-style: italic; font-weight: 400; font-display: swap;
+  src: url("/css/fonts/LM-italic.woff2") format("woff2"),
+       url("https://cdn.jsdelivr.net/npm/latex.css/fonts/LM-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Latin Modern"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("/css/fonts/LM-bold.woff2") format("woff2"),
+       url("https://cdn.jsdelivr.net/npm/latex.css/fonts/LM-bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Latin Modern"; font-style: italic; font-weight: 700; font-display: swap;
+  src: url("/css/fonts/LM-bold-italic.woff2") format("woff2"),
+       url("https://cdn.jsdelivr.net/npm/latex.css/fonts/LM-bold-italic.woff2") format("woff2");
+}
+
 :root {
   /* The greys are the HugoTeX theme's own dark mode — body hsl(0,0%,16%) on text
      hsl(0,0%,86%) — so the page reads as part of the blog rather than as a window cut into
