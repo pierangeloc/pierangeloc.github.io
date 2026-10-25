@@ -1,5 +1,6 @@
 import { buildPhases, butterFraction, chapterAt, chaptersOf, ease, lerp, r1 } from "./phases.js";
 import * as P from "./profile.js";
+import { trianglesInStrip } from "../lamination.js";
 const THREE_VERSION = "0.180.0";
 const CDN = `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}`;
 const EXAGGERATION_MAX = 8;
@@ -11,6 +12,8 @@ const CUT_GAP = 0.35;
 const cutGap = (slabs) => CUT_GAP * slabs.reduce((m, sl) => Math.max(m, sl.to - sl.from), 0);
 const RELIEF_PUSH = 0.5;
 const reliefPush = (slabs) => RELIEF_PUSH * slabs.reduce((m, sl) => Math.max(m, sl.to - sl.from), 0);
+const CUT_SHOWN = 0.25;
+const CUT_FAN = 0.9;
 const KNIFE_THICKNESS = 0.35;
 const PANEL_STRAIGHT_SHARE = 0.5;
 function exaggerationFor(phases) {
@@ -219,6 +222,83 @@ function sceneAt(plan, p, u, butterFrac, arcSeg, k, coarse = false) {
         }
         return { pieces, layers, volume: vol(whole) * (p.kind === "focus" ? 1 : 1), trim: null, nose: null };
     }
+    if (p.kind === "shape") {
+        const s = { ...p.b, l: lerp(p.a.l, p.b.l, u) };
+        const rs = flatBlock(s, butterFrac, arcSeg, k, coarse);
+        const whole = () => ({
+            pieces: [{ ribbons: rs, width: s.w, offset: { x: 0, y: 0, z: 0 }, fade: 0 }],
+            layers: p.b.layers,
+            volume: vol(s),
+            trim: null,
+            nose: null,
+        });
+        if (u < CUT_SHOWN)
+            return whole();
+        const share = plan.allocation.stripBreakdown.find((b) => b.strip === 1);
+        if (!share)
+            return whole();
+        const base = plan.croissant.base;
+        const part = ease(Math.min(1, Math.max(0, (u - CUT_SHOWN) / (1 - CUT_SHOWN))));
+        const gap = CUT_FAN * part;
+        const half = s.w / 2;
+        const pieces = [];
+        let slot = 0;
+        const piece = (x0, x1, width, z, taper, fade = 0) => {
+            const ribbons = clipRibbons(rs, x0, x1);
+            if (ribbons.length)
+                pieces.push({ ribbons, width, offset: { x: gap * slot, y: 0, z }, fade, taper });
+        };
+        let at = 0;
+        if (share.pac > 0) {
+            const pw = plan.pac.width;
+            const rows = Math.max(1, Math.round(plan.strip.height / plan.pac.height));
+            const rh = s.w / rows;
+            const cols = Math.ceil(share.pac / rows);
+            for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows; r++) {
+                    if (c * rows + r >= share.pac)
+                        break;
+                    piece(at + c * pw, at + (c + 1) * pw, rh, -half + (r + 0.5) * rh + gap * (r - (rows - 1) / 2));
+                }
+                slot++;
+            }
+            at += cols * pw;
+        }
+        const rest = s.l - at;
+        const n = Math.min(share.croissants, trianglesInStrip(rest, base, plan.croissant.cutStyle));
+        if (plan.croissant.cutStyle === "diagonal") {
+            for (let i = 0; i < n; i++) {
+                const fx = at + base * Math.floor(i / 2);
+                const up = i % 2 === 0;
+                piece(fx, fx + base, s.w, 0, {
+                    x0: fx,
+                    x1: fx + base,
+                    lo: up ? [-half, half] : [-half, -half],
+                    hi: up ? [half, half] : [-half, half],
+                });
+                slot++;
+            }
+            at += base * Math.ceil(n / 2);
+        }
+        else {
+            const h = base / 2;
+            for (let i = 0; i < n; i++) {
+                const fx = at + h * i;
+                const tip = i % 2 === 0 ? -half : half;
+                const edge = -tip;
+                const away = Math.sign(tip) * gap * 2.5;
+                piece(fx, fx + h, s.w, away, { x0: fx, x1: fx + h, lo: [edge, Math.min(tip, edge)], hi: [edge, Math.max(tip, edge)] });
+                piece(fx + h, fx + 2 * h, s.w, away, { x0: fx + h, x1: fx + 2 * h, lo: [Math.min(tip, edge), edge], hi: [Math.max(tip, edge), edge] });
+            }
+            at += h * n + (n > 0 ? h : 0);
+            slot++;
+        }
+        if (s.l - at > 0.05)
+            piece(at, s.l, s.w, 0, undefined, 0.5 * part);
+        return pieces.length
+            ? { pieces, layers: p.b.layers, volume: vol(s), trim: null, nose: null }
+            : whole();
+    }
     const s = p.kind === "rotate" ? p.a : { ...p.b, l: lerp(p.a.l, p.b.l, u) };
     return {
         pieces: [{ ribbons: flatBlock(s, butterFrac, arcSeg, k, coarse), width: s.w, offset: { x: 0, y: 0, z: 0 }, fade: 0 }],
@@ -234,9 +314,14 @@ async function loadThree() {
     return { T: three, OrbitControls: controls.OrbitControls };
 }
 const emptyMesh = () => ({ positions: [], lines: [] });
-function extrude(r, w, dx, dy, dz, out) {
-    const z0 = -w / 2 + dz;
-    const z1 = w / 2 + dz;
+function extrude(r, w, dx, dy, dz, out, taper) {
+    const zAt = (x) => {
+        if (!taper)
+            return [-w / 2 + dz, w / 2 + dz];
+        const span = taper.x1 - taper.x0;
+        const q = Math.min(1, Math.max(0, span > 1e-9 ? (x - taper.x0) / span : 0));
+        return [lerp(taper.lo[0], taper.lo[1], q) + dz, lerp(taper.hi[0], taper.hi[1], q) + dz];
+    };
     const quad = (ax, ay, az, bx, by, bz, cx, cy, cz, ex, ey, ez) => {
         out.positions.push(ax, ay, az, bx, by, bz, cx, cy, cz, ax, ay, az, cx, cy, cz, ex, ey, ez);
     };
@@ -246,34 +331,40 @@ function extrude(r, w, dx, dy, dz, out) {
         const l1 = r.lo[i];
         const h0 = r.hi[i - 1];
         const h1 = r.hi[i];
-        quad(l0.x + dx, (l0.y + dy), z0, l1.x + dx, (l1.y + dy), z0, l1.x + dx, (l1.y + dy), z1, l0.x + dx, (l0.y + dy), z1);
-        quad(h0.x + dx, (h0.y + dy), z0, h1.x + dx, (h1.y + dy), z0, h1.x + dx, (h1.y + dy), z1, h0.x + dx, (h0.y + dy), z1);
-        quad(l0.x + dx, (l0.y + dy), z0, l1.x + dx, (l1.y + dy), z0, h1.x + dx, (h1.y + dy), z0, h0.x + dx, (h0.y + dy), z0);
-        quad(l0.x + dx, (l0.y + dy), z1, l1.x + dx, (l1.y + dy), z1, h1.x + dx, (h1.y + dy), z1, h0.x + dx, (h0.y + dy), z1);
+        const [a0, a1] = zAt(l0.x);
+        const [b0, b1] = zAt(l1.x);
+        quad(l0.x + dx, (l0.y + dy), a0, l1.x + dx, (l1.y + dy), b0, l1.x + dx, (l1.y + dy), b1, l0.x + dx, (l0.y + dy), a1);
+        quad(h0.x + dx, (h0.y + dy), a0, h1.x + dx, (h1.y + dy), b0, h1.x + dx, (h1.y + dy), b1, h0.x + dx, (h0.y + dy), a1);
+        quad(l0.x + dx, (l0.y + dy), a0, l1.x + dx, (l1.y + dy), b0, h1.x + dx, (h1.y + dy), b0, h0.x + dx, (h0.y + dy), a0);
+        quad(l0.x + dx, (l0.y + dy), a1, l1.x + dx, (l1.y + dy), b1, h1.x + dx, (h1.y + dy), b1, h0.x + dx, (h0.y + dy), a1);
     }
     for (const [a, b] of [
         [r.lo[0], r.hi[0]],
         [r.lo[n - 1], r.hi[n - 1]],
     ])
-        if (a && b)
-            quad(a.x + dx, a.y + dy, z0, b.x + dx, b.y + dy, z0, b.x + dx, b.y + dy, z1, a.x + dx, a.y + dy, z1);
-    const edge = (pts, z) => {
+        if (a && b) {
+            const [c0, c1] = zAt(a.x);
+            quad(a.x + dx, a.y + dy, c0, b.x + dx, b.y + dy, c0, b.x + dx, b.y + dy, c1, a.x + dx, a.y + dy, c1);
+        }
+    const edge = (pts, side) => {
         for (let i = 1; i < pts.length; i++)
-            out.lines.push(pts[i - 1].x + dx, pts[i - 1].y + dy, z, pts[i].x + dx, pts[i].y + dy, z);
+            out.lines.push(pts[i - 1].x + dx, pts[i - 1].y + dy, zAt(pts[i - 1].x)[side], pts[i].x + dx, pts[i].y + dy, zAt(pts[i].x)[side]);
     };
-    for (const z of [z0, z1]) {
-        edge(r.lo, z);
-        edge(r.hi, z);
+    for (const side of [0, 1]) {
+        edge(r.lo, side);
+        edge(r.hi, side);
     }
     if (r.lo[0] && r.hi[0]) {
-        out.lines.push(r.lo[0].x + dx, r.lo[0].y + dy, z0, r.hi[0].x + dx, r.hi[0].y + dy, z0);
-        out.lines.push(r.lo[0].x + dx, r.lo[0].y + dy, z1, r.hi[0].x + dx, r.hi[0].y + dy, z1);
+        const [c0, c1] = zAt(r.lo[0].x);
+        out.lines.push(r.lo[0].x + dx, r.lo[0].y + dy, c0, r.hi[0].x + dx, r.hi[0].y + dy, c0);
+        out.lines.push(r.lo[0].x + dx, r.lo[0].y + dy, c1, r.hi[0].x + dx, r.hi[0].y + dy, c1);
     }
     const la = r.lo[n - 1];
     const ha = r.hi[n - 1];
     if (la && ha) {
-        out.lines.push(la.x + dx, la.y + dy, z0, ha.x + dx, ha.y + dy, z0);
-        out.lines.push(la.x + dx, la.y + dy, z1, ha.x + dx, ha.y + dy, z1);
+        const [c0, c1] = zAt(la.x);
+        out.lines.push(la.x + dx, la.y + dy, c0, ha.x + dx, ha.y + dy, c0);
+        out.lines.push(la.x + dx, la.y + dy, c1, ha.x + dx, ha.y + dy, c1);
     }
 }
 const fill = (s, vals) => s.replace(/\{(\w+)\}/g, (_, k) => String(vals[k] ?? ""));
@@ -291,6 +382,7 @@ export function threeView(plan, str, masses, stepTitle) {
         return st ? (st.roll.l - st.trimmed.l) / 2 : null;
     })();
     const total = phases.reduce((n, q) => n + q.dur, 0);
+    const cutShare = plan.allocation.stripBreakdown.find((b) => b.strip === 1) ?? null;
     const noses = new Map();
     for (const q of phases)
         if (q.kind === "fold")
@@ -393,6 +485,10 @@ export function threeView(plan, str, masses, stepTitle) {
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.08;
+        canvasBox.addEventListener("wheel", (e) => {
+            if (!e.metaKey && !e.ctrlKey)
+                e.stopPropagation();
+        }, { capture: true });
         const doughColor = new T.Color(cssVar("--dough", "#e9d9b6"));
         const butterColor = new T.Color(cssVar("--butter", "#f6edcd"));
         const lineColor = new T.Color(cssVar("--line", "#3a3a42"));
@@ -527,7 +623,7 @@ export function threeView(plan, str, masses, stepTitle) {
                 const out = piece.fade > 0.01 ? { dough: emptyMesh(), butter: emptyMesh(), fade: piece.fade } : null;
                 for (const r of piece.ribbons) {
                     const bucket = out ? (r.kind === "butter" ? out.butter : out.dough) : r.kind === "butter" ? butter : dough;
-                    extrude(r, piece.width, piece.offset.x, piece.offset.y, piece.offset.z, bucket);
+                    extrude(r, piece.width, piece.offset.x, piece.offset.y, piece.offset.z, bucket, piece.taper);
                 }
                 if (out)
                     faded.push(out);
@@ -637,6 +733,11 @@ export function threeView(plan, str, masses, stepTitle) {
             }
             if (sc.trim !== null)
                 line(fill(str.trimNote, { trim: r1(sc.trim) }), "hudnose");
+            if (p.kind === "shape" && u > CUT_SHOWN && cutShare) {
+                line(fill(str.share, { n: plan.strips, pac: cutShare.pac, cro: cutShare.croissants }), "hudnose");
+                if (plan.strips > 1)
+                    line(fill(str.shareAll, { pacAll: plan.allocation.pac, croAll: plan.allocation.croissants }));
+            }
             resize();
             controls.update();
             renderer.render(scene, camera);

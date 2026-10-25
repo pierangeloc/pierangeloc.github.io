@@ -21,7 +21,7 @@ export function phasesOf(s, layersBefore, layersAfter, str) {
         push("trim", str.trim, 0.8, snap(s.roll, layersBefore), snap(s.trimmed, layersBefore));
     const start = s.trimmed ?? s.roll ?? s.from;
     if (s.kind === "final") {
-        push("shape", str.shape, 1.2, snap(start, layersAfter), snap(s.result, layersAfter));
+        push("shape", str.shape, 2.4, snap(start, layersAfter), snap(s.result, layersAfter));
     }
     else if (s.pieces > 1) {
         const across = s.result.w < s.from.w - 1e-9;

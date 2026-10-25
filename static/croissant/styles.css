@@ -27,6 +27,29 @@
        url("https://cdn.jsdelivr.net/npm/latex.css/fonts/LM-bold-italic.woff2") format("woff2");
 }
 
+/* The same typeface family seen through TeX's other eye: Computer Modern Sans, the face
+   Beamer sets its slides in. Latin Modern's serifs are hairlines — that is what makes it
+   look like print — and a hairline is the first thing a phone screen loses: on a small,
+   dark panel the text goes from fine to frail. The sans has no hairlines to lose, and it is
+   still the same drawing, so the page reads as the same page.
+
+   Only on the CDN: the blog theme ships the roman weights it uses and nothing else, so
+   there is no same-origin copy to prefer here. Pinned to a commit rather than to `master`,
+   because a branch ref on jsDelivr is whatever that branch says today. Falls back to the
+   platform's own grotesque, which is what a phone has plenty of. */
+@font-face {
+  font-family: "CMU Sans"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/dreampulse/computer-modern-web-font@e9977be1283466992a2dede47a342655d8426fee/font/Sans/cmunss.woff") format("woff");
+}
+@font-face {
+  font-family: "CMU Sans"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/dreampulse/computer-modern-web-font@e9977be1283466992a2dede47a342655d8426fee/font/Sans/cmunsx.woff") format("woff");
+}
+@font-face {
+  font-family: "CMU Sans"; font-style: italic; font-weight: 400; font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/dreampulse/computer-modern-web-font@e9977be1283466992a2dede47a342655d8426fee/font/Sans/cmunsi.woff") format("woff");
+}
+
 :root {
   /* The greys are the HugoTeX theme's own dark mode — body hsl(0,0%,16%) on text
      hsl(0,0%,86%) — so the page reads as part of the blog rather than as a window cut into
@@ -52,6 +75,9 @@
   /* TeX does not round its boxes. Not zero: a hair of a radius keeps the panels from
      looking like they were drawn by a different program than the rest of the page. */
   --radius: 3px;
+  /* The page's one typeface, named once so the phone can swap it (see the media query
+     at the end of the file) without every rule that sets `font: inherit` noticing. */
+  --face: "Latin Modern", Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
 * { box-sizing: border-box; }
@@ -60,7 +86,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 15px/1.42 "Latin Modern", Georgia, Cambria, "Times New Roman", Times, serif;
+  font: 15px/1.42 var(--face);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -452,6 +478,17 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 @media (max-width: 900px) {
   main { grid-template-columns: 1fr; }
   #panel { position: static; }
+}
+
+/* Narrow, the page is set in the sans. Not a different design — the same Computer Modern,
+   without the hairline serifs that a small dark screen turns into fringe. The threshold is the
+   same 900 px the layout already breaks at: one column and one typeface change together, so
+   there is no width at which the page is in the phone's shape and the print's face. To put the
+   whole page in the sans, move `--face` to `:root` instead. CMU Sans runs a little smaller on
+   the body than Latin Modern at the same size, so the narrow page gets the half point back. */
+@media (max-width: 900px) {
+  :root { --face: "CMU Sans", "Latin Modern", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  body { font-size: 15.5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

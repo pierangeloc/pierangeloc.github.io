@@ -540,6 +540,8 @@ const threeStrings = () => ({
     reliefCut: t.ui.d3ReliefCut,
     reliefDepth: t.ui.d3ReliefDepth,
     trimNote: t.ui.d3Trim,
+    share: t.ui.animShare,
+    shareAll: t.ui.animShareAll,
     loading: t.ui.d3Loading,
     unsupported: t.ui.d3Unsupported,
     drag: t.ui.d3Drag,
