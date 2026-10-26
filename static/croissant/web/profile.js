@@ -105,6 +105,87 @@ export function foldSegments(n, sheetLen, t, u, style = foldStyle(n), room = 0) 
     segs.push({ kind: "line", len: Math.max(0, sheetLen - done) });
     return segs;
 }
+export const rollSweep = (rolled, t, core) => t <= 1e-12 ? 0 : ((Math.sqrt(core * core + (Math.max(0, rolled) * t) / Math.PI) - core) * 2 * Math.PI) / t;
+export const rollTurns = (rolled, t, core) => rollSweep(rolled, t, core) / (2 * Math.PI);
+export function rollSegments(sheetLen, t, core, rolled, arcsPerTurn = 24) {
+    const m = Math.max(0, Math.min(sheetLen, rolled));
+    const segs = [];
+    const sweep = rollSweep(m, t, core);
+    if (sweep > 1e-9) {
+        const steps = Math.max(1, Math.ceil((sweep * arcsPerTurn) / (2 * Math.PI)));
+        const d = sweep / steps;
+        for (let i = 0; i < steps; i++)
+            segs.push({ kind: "arc", r: core + (t * (i * d + d / 2)) / (2 * Math.PI), sweep: d });
+    }
+    const flat = sheetLen - m;
+    if (flat > 1e-9)
+        segs.push({ kind: "line", len: flat });
+    return segs.length ? segs : [{ kind: "line", len: sheetLen }];
+}
+export function pacRoll(sheetLen, t, bar, rolled) {
+    const m = Math.max(0, Math.min(sheetLen, rolled));
+    const span = 2 * bar.w + t;
+    const alone = [
+        { len: bar.w, turn: Math.PI / 2, r: 0 },
+        { len: bar.h, turn: Math.PI / 2, r: 0 },
+        { len: bar.w, turn: Math.PI / 2, r: 0 },
+        { len: bar.h + t, turn: Math.PI / 2, r: 0 },
+    ];
+    const slope = Math.atan2(2 * t, bar.w);
+    const cut = t * Math.tan(slope / 2);
+    const together = [
+        { len: span, turn: Math.PI / 2, r: 0 },
+        { len: bar.h, turn: Math.PI / 2 - slope, r: 0 },
+        { len: Math.hypot(bar.w, 2 * t) - cut, turn: slope, r: t },
+        { len: bar.w + 2 * t - cut - t, turn: Math.PI / 2, r: t },
+        { len: bar.h + t, turn: Math.PI / 2, r: t },
+    ];
+    const offsetOf = (lap) => t / 2 + Math.max(0, lap - 1) * t;
+    const firstTurn = 2 * (bar.w + bar.h) + t + Math.PI * t;
+    const reach = firstTurn + bar.w + t;
+    const segs = [];
+    let used = 0;
+    outer: for (let lap = 0; lap < 100 && used < m - 1e-9; lap++) {
+        const d = offsetOf(lap);
+        for (const c of lap === 0 ? alone : together) {
+            const take = Math.min(c.len, m - used);
+            if (take > 1e-12) {
+                segs.push({ kind: "line", len: take });
+                used += take;
+            }
+            if (take < c.len - 1e-12)
+                break outer;
+            const r = c.r + d;
+            const arc = c.turn * r;
+            const bite = Math.min(arc, m - used);
+            if (bite <= 1e-12)
+                break outer;
+            segs.push({ kind: "arc", r, sweep: c.turn * (bite / arc) });
+            used += bite;
+            if (bite < arc - 1e-12)
+                break outer;
+        }
+    }
+    const flat = sheetLen - used;
+    if (flat > 1e-9)
+        segs.push({ kind: "line", len: flat });
+    const path = segs.length ? segs : [{ kind: "line", len: sheetLen }];
+    const put = (from, along) => {
+        const p = poseAt(path, from);
+        const u = { x: Math.cos(p.dir), y: Math.sin(p.dir) };
+        const n = { x: -Math.sin(p.dir), y: Math.cos(p.dir) };
+        const out = t / 2 + bar.h / 2;
+        return {
+            at: { x: p.x + u.x * along + n.x * out, y: p.y + u.y * along + n.y * out },
+            dir: p.dir,
+            wrapped: m >= from + along - bar.w / 2 - 1e-9,
+        };
+    };
+    const batons = [put(0, bar.w / 2)];
+    if (sheetLen >= reach + bar.w)
+        batons.push(put(firstTurn, 1.5 * bar.w + t));
+    return { segs: path, batons, firstTurn };
+}
 export function poseAt(segs, at) {
     let x = 0;
     let y = 0;

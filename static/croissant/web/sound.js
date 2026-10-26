@@ -183,6 +183,24 @@ export function phaseSound(kind, info) {
                     space: 0.05,
                 });
             break;
+        case "pac":
+            for (const k of [0, 1]) {
+                note(base - 7, { wave: "sine", attack: 0.004, decay: 0.26, gain: 0.4, at: k * 0.45 });
+                note(base + 2 + k * 3, { wave: "triangle", attack: 0.01, decay: 0.35, gain: 0.2, at: k * 0.45 + 0.14 });
+            }
+            note(base - 5, { wave: "sine", attack: 0.2, decay: 1.1, gain: 0.16, space: 0.4 });
+            break;
+        case "wind":
+            for (let k = 0; k < 5; k++)
+                note(base + k * 2, {
+                    wave: "triangle",
+                    attack: 0.006,
+                    decay: 0.3,
+                    gain: 0.24 - k * 0.03,
+                    at: k * 0.16 + k * k * 0.02,
+                });
+            note(base - 5, { wave: "sine", attack: 0.2, decay: 1.1, gain: 0.16, space: 0.4 });
+            break;
         case "shape":
             for (let k = 0; k < 5; k++) {
                 knife(base + 3 + k, { at: k * 0.1, gain: 0.5 });

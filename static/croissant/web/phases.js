@@ -98,7 +98,12 @@ export function buildPhases(plan, str, masses) {
         wrap.gA = masses.dough + masses.butter;
     return out;
 }
-const isGesture = (p) => p.kind === "wrap" || p.kind === "fold" || p.kind === "cut" || p.kind === "shape";
+const isGesture = (p) => p.kind === "wrap" ||
+    p.kind === "fold" ||
+    p.kind === "cut" ||
+    p.kind === "shape" ||
+    p.kind === "wind" ||
+    p.kind === "pac";
 export function chaptersOf(phases) {
     const out = [];
     let at = 0;

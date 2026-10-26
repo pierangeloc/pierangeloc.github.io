@@ -6,7 +6,7 @@ import { threeView } from "./three-view.js";
 const STORE = "croissant-calc/v1";
 const initial = { butterSheet: { width: 31, length: 38 } };
 const load = () => {
-    const base = { lang: "it", params: { ...initial }, butterMode: "measure", doughMode: "recipe", liquids: defaultLiquids, target: 0, tab: "flat" };
+    const base = { lang: "it", params: { ...initial }, butterMode: "measure", doughMode: "recipe", liquids: defaultLiquids, target: 0, tab: "flat", theme: "dark", text: 1 };
     try {
         const raw = localStorage.getItem(STORE);
         if (!raw)
@@ -374,8 +374,8 @@ function buildPanel() {
     add(t.sections.final, ["finalThickness"], (b) => {
         b.append(num("finalThickness", { min: 0.2, max: 1.0, step: 0.05, unit: "mm", asMm: true }).node);
     });
-    add(t.sections.products, ["croissantBase", "pacWidth", "wantPac", "cutStyle"], (b) => {
-        b.append(num("croissantBase", { min: 6, max: 16, step: 0.5, unit: "cm" }).node, num("pacWidth", { min: 3, max: 10, step: 0.5, unit: "cm" }).node, num("wantPac", { min: 0, max: 120, step: 1, unit: "", decimals: 0 }).node);
+    add(t.sections.products, ["croissantBase", "pacWidth", "batonLength", "wantPac", "cutStyle"], (b) => {
+        b.append(num("croissantBase", { min: 6, max: 16, step: 0.5, unit: "cm" }).node, num("pacWidth", { min: 3, max: 10, step: 0.5, unit: "cm" }).node, num("batonLength", { min: 4, max: 16, step: 0.5, unit: "cm" }).node, num("wantPac", { min: 0, max: 120, step: 1, unit: "", decimals: 0 }).node);
         b.append(choice({
             label: t.labels.cutStyle,
             hint: t.hints.cutStyle,
@@ -524,6 +524,8 @@ const threeStrings = () => ({
     pause: t.ui.animPause,
     replay: t.ui.animReplay,
     chapter: t.ui.animChapter,
+    pieces: t.ui.d3Pieces,
+    pieceChapter: t.ui.d3PieceChapter,
     prep: t.ui.animPrep,
     resetView: t.ui.d3ResetView,
     cutFace: t.ui.d3CutFace,
@@ -537,6 +539,13 @@ const threeStrings = () => ({
     volumeLabel: t.ui.d3Volume,
     noseNote: t.ui.d3Nose,
     relief: t.ui.d3Relief,
+    wind: t.ui.d3Wind,
+    windStep: t.ui.d3WindStep,
+    pac: t.ui.d3Pac,
+    pacStep: t.ui.d3PacStep,
+    pacNote: t.ui.d3PacNote,
+    pacFits: t.ui.d3PacFits,
+    windNote: t.ui.d3WindNote,
     reliefCut: t.ui.d3ReliefCut,
     reliefDepth: t.ui.d3ReliefDepth,
     trimNote: t.ui.d3Trim,
@@ -756,8 +765,28 @@ function recompute() {
     const p = effective();
     renderOut(solve(p), p);
 }
+const TEXT_BASE = 15.5;
+const TEXT_MIN = 0.8;
+const TEXT_MAX = 1.4;
+const TEXT_STEP = 0.1;
+function applyStyle() {
+    const root = document.documentElement;
+    root.dataset.theme = state.theme;
+    root.style.setProperty("--size", `${(TEXT_BASE * state.text).toFixed(2)}px`);
+    const dark = state.theme === "dark";
+    const theme = q("#themeBtn");
+    theme.textContent = dark ? "☀" : "☾";
+    theme.title = dark ? t.ui.themeLight : t.ui.themeDark;
+    const down = q("#textDown");
+    const up = q("#textUp");
+    down.title = t.ui.textSmaller;
+    up.title = t.ui.textLarger;
+    down.disabled = state.text <= TEXT_MIN + 1e-9;
+    up.disabled = state.text >= TEXT_MAX - 1e-9;
+}
 function render() {
     t = strings[state.lang];
+    applyStyle();
     q("#title").textContent = t.title;
     q("#subtitle").textContent = t.subtitle;
     buildPanel();
@@ -774,6 +803,19 @@ for (const b of document.querySelectorAll("[data-lang]")) {
     });
     b.classList.toggle("on", b.dataset.lang === state.lang);
 }
+q("#themeBtn").addEventListener("click", () => {
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    save(state);
+    applyStyle();
+    recompute();
+});
+const stepText = (by) => {
+    state.text = Math.min(TEXT_MAX, Math.max(TEXT_MIN, Math.round((state.text + by) * 100) / 100));
+    save(state);
+    applyStyle();
+};
+q("#textDown").addEventListener("click", () => stepText(-TEXT_STEP));
+q("#textUp").addEventListener("click", () => stepText(TEXT_STEP));
 q("#resetAll").addEventListener("click", () => {
     state.params = { ...initial };
     state.butterMode = "measure";

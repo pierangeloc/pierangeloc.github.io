@@ -17,6 +17,7 @@ export const defaults = {
     croissantBase: 10,
     cutStyle: "diagonal",
     pacWidth: 5.5,
+    batonLength: 8,
     wantPac: 0,
 };
 export const defaultLiquids = "semiSkimmed";
@@ -345,7 +346,7 @@ export function solve(input = {}) {
             total: stripSet.reduce((n, s) => n + s.croissants, 0),
             grams: triGrams,
         },
-        pac: { width: p.pacWidth, height: pacH, perStrip: pacPerStrip, total: maxPac, grams: pacGrams },
+        pac: { width: p.pacWidth, height: pacH, baton: p.batonLength, perStrip: pacPerStrip, total: maxPac, grams: pacGrams },
         allocation,
         usedGrams,
         trimmedGrams: massTot - usedGrams,

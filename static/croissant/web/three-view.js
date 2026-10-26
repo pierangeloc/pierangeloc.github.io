@@ -14,6 +14,29 @@ const RELIEF_PUSH = 0.5;
 const reliefPush = (slabs) => RELIEF_PUSH * slabs.reduce((m, sl) => Math.max(m, sl.to - sl.from), 0);
 const CUT_SHOWN = 0.25;
 const CUT_FAN = 0.9;
+const ROLL_CORE = 0.9;
+const ROLL_ARCS_PER_TURN = 24;
+const ROLL_ELASTICITY = 1;
+const CHOC_DENSITY = 1.25;
+const BATON_BOX = { grams: 1600 / 300, length: 8 };
+const BATON = (() => {
+    const h = Math.sqrt(BATON_BOX.grams / CHOC_DENSITY / BATON_BOX.length / 2);
+    return { w: 2 * h, h };
+})();
+const BATON_EMBED = 0.82;
+const batonHalf = () => ({ w: (BATON_EMBED * BATON.w) / 2, h: (BATON_EMBED * BATON.h) / 2 });
+const PAC_MAX_SHEET = 0.5;
+const pacExaggeration = (t, k) => t <= 0 ? k : Math.max(1, Math.min(k, Math.round(((PAC_MAX_SHEET * BATON.h) / t) * 10) / 10));
+const BATON_LAND = 0.12;
+const BATON_DROP = 4;
+const PAC_SETTLE = 0.22;
+const ROLL_MIN_TURNS = 4;
+function rollExaggeration(sheetLen, t, k) {
+    if (t <= 0)
+        return k;
+    const most = sheetLen / (Math.PI * t * ROLL_MIN_TURNS * ROLL_MIN_TURNS);
+    return Math.max(1, Math.min(k, Math.round(most * 10) / 10));
+}
 const KNIFE_THICKNESS = 0.35;
 const PANEL_STRAIGHT_SHARE = 0.5;
 function exaggerationFor(phases) {
@@ -37,6 +60,7 @@ function exaggerationFor(phases) {
     }
     return Math.max(1, Math.round(k * 10) / 10);
 }
+const isClose = (k) => k === "wind" || k === "pac";
 const sandwichOf = (s, butterFrac, k, coarse = false) => {
     const sl = P.slabs(s.t * k, drawnLayers(s.layers), butterFrac);
     return coarse && sl.length > 2 ? [sl[0], sl[sl.length - 1]] : sl;
@@ -201,6 +225,87 @@ function sceneAt(plan, p, u, butterFrac, arcSeg, k, coarse = false) {
             relief: real,
         };
     }
+    if (p.kind === "wind") {
+        const base = plan.croissant.base;
+        const h = plan.croissant.height;
+        const kr = rollExaggeration(h, p.a.t, k);
+        const s = { w: base, l: h, t: p.a.t, layers: p.a.layers };
+        const t = p.a.t * kr;
+        const segs = P.rollSegments(h, t, ROLL_CORE * t, u * h, ROLL_ARCS_PER_TURN);
+        const slabs = sandwichOf(s, butterFrac, kr, coarse);
+        const rs = P.ribbons(segs, slabs, t, h, arcSeg, ROLL_ELASTICITY, P.anchoredStart(segs, h));
+        return {
+            pieces: [
+                { ribbons: rs, width: base, offset: { x: 0, y: 0, z: 0 }, fade: 0, shrink: (f) => (base / 2) * (1 - f) },
+            ],
+            layers: p.a.layers,
+            volume: (base * h * p.a.t) / 2,
+            trim: null,
+            nose: null,
+            scale: kr,
+            roll: { base, height: h, turns: P.rollTurns(u * h, t, ROLL_CORE * t) },
+        };
+    }
+    if (p.kind === "pac") {
+        const w = plan.pac.width;
+        const h = plan.pac.height;
+        const baton = plan.pac.baton;
+        const kr = pacExaggeration(p.a.t, k);
+        const sheet = { w, l: h, t: p.a.t, layers: p.a.layers };
+        const t = p.a.t * kr;
+        const firstTurn = P.pacRoll(h, t, BATON, h).firstTurn;
+        const share = Math.min(1, firstTurn / h);
+        const rolling = 1 - 2 * BATON_LAND - PAC_SETTLE;
+        const cuts = [BATON_LAND, BATON_LAND + rolling * share, 2 * BATON_LAND + rolling * share];
+        const done = 1 - PAC_SETTLE;
+        const span = (a, b) => Math.min(1, Math.max(0, (u - a) / (b - a || 1)));
+        const rolled = u < cuts[0]
+            ? 0
+            : u < cuts[1]
+                ? firstTurn * span(cuts[0], cuts[1])
+                : u < cuts[2]
+                    ? firstTurn
+                    : firstTurn + (h - firstTurn) * span(cuts[2], done);
+        const roll = P.pacRoll(h, t, BATON, rolled);
+        const tail = P.anchoredStart(roll.segs, h);
+        const level = (() => {
+            const flat = P.anchoredStart(roll.segs, Math.min(h, firstTurn + (2 * BATON.w + t) / 2));
+            const pts = P.walk(roll.segs, flat, 0, h, 8);
+            let lo = Infinity;
+            let hi = -Infinity;
+            for (const q of pts) {
+                lo = Math.min(lo, q.y);
+                hi = Math.max(hi, q.y);
+            }
+            const seam = pts[pts.length - 1];
+            return { ...flat, dir: flat.dir + (seam.y > (lo + hi) / 2 ? Math.PI : 0) };
+        })();
+        const settle = ease(span(done, 1));
+        const turn = ((level.dir - tail.dir + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+        const start = { x: tail.x, y: tail.y, dir: tail.dir + turn * settle };
+        const rs = P.ribbons(roll.segs, sandwichOf(sheet, butterFrac, kr, coarse), t, h, arcSeg, ROLL_ELASTICITY, start);
+        const c = Math.cos(start.dir);
+        const sn = Math.sin(start.dir);
+        const fall = [ease(span(0, cuts[0])), ease(span(cuts[1], cuts[2]))];
+        const batons = roll.batons
+            .map((b, i) => ({ b, drop: (1 - fall[i]) * BATON_DROP * BATON.h }))
+            .filter((_, i) => fall[i] > 0)
+            .map(({ b, drop }) => ({
+            x: start.x + b.at.x * c - b.at.y * sn,
+            y: start.y + b.at.x * sn + b.at.y * c + drop,
+            rot: start.dir + b.dir,
+        }));
+        return {
+            pieces: [{ ribbons: rs, width: w, offset: { x: 0, y: 0, z: 0 }, fade: 0 }],
+            layers: p.a.layers,
+            volume: w * h * p.a.t,
+            trim: null,
+            nose: null,
+            scale: kr,
+            batons,
+            pac: { w, h, baton, over: (baton - w) / 2, batons: roll.batons.length },
+        };
+    }
     if (p.kind === "cut" || p.kind === "focus") {
         const n = Math.max(1, p.pieces);
         const across = p.cutAcross;
@@ -314,8 +419,21 @@ async function loadThree() {
     return { T: three, OrbitControls: controls.OrbitControls };
 }
 const emptyMesh = () => ({ positions: [], lines: [] });
-function extrude(r, w, dx, dy, dz, out, taper) {
-    const zAt = (x) => {
+function extrude(r, w, dx, dy, dz, out, taper, shrink) {
+    const cum = (() => {
+        if (!shrink)
+            return null;
+        const at = [0];
+        for (let i = 1; i < r.mid.length; i++)
+            at.push(at[i - 1] + Math.hypot(r.mid[i].x - r.mid[i - 1].x, r.mid[i].y - r.mid[i - 1].y));
+        return at;
+    })();
+    const zAt = (i, x) => {
+        if (cum && shrink) {
+            const total = cum[cum.length - 1] || 1;
+            const half = Math.max(0, shrink(cum[Math.min(Math.max(0, i), cum.length - 1)] / total));
+            return [-half + dz, half + dz];
+        }
         if (!taper)
             return [-w / 2 + dz, w / 2 + dz];
         const span = taper.x1 - taper.x0;
@@ -331,38 +449,38 @@ function extrude(r, w, dx, dy, dz, out, taper) {
         const l1 = r.lo[i];
         const h0 = r.hi[i - 1];
         const h1 = r.hi[i];
-        const [a0, a1] = zAt(l0.x);
-        const [b0, b1] = zAt(l1.x);
+        const [a0, a1] = zAt(i - 1, l0.x);
+        const [b0, b1] = zAt(i, l1.x);
         quad(l0.x + dx, (l0.y + dy), a0, l1.x + dx, (l1.y + dy), b0, l1.x + dx, (l1.y + dy), b1, l0.x + dx, (l0.y + dy), a1);
         quad(h0.x + dx, (h0.y + dy), a0, h1.x + dx, (h1.y + dy), b0, h1.x + dx, (h1.y + dy), b1, h0.x + dx, (h0.y + dy), a1);
         quad(l0.x + dx, (l0.y + dy), a0, l1.x + dx, (l1.y + dy), b0, h1.x + dx, (h1.y + dy), b0, h0.x + dx, (h0.y + dy), a0);
         quad(l0.x + dx, (l0.y + dy), a1, l1.x + dx, (l1.y + dy), b1, h1.x + dx, (h1.y + dy), b1, h0.x + dx, (h0.y + dy), a1);
     }
-    for (const [a, b] of [
-        [r.lo[0], r.hi[0]],
-        [r.lo[n - 1], r.hi[n - 1]],
-    ])
+    for (const i of [0, n - 1]) {
+        const a = r.lo[i];
+        const b = r.hi[i];
         if (a && b) {
-            const [c0, c1] = zAt(a.x);
+            const [c0, c1] = zAt(i, a.x);
             quad(a.x + dx, a.y + dy, c0, b.x + dx, b.y + dy, c0, b.x + dx, b.y + dy, c1, a.x + dx, a.y + dy, c1);
         }
+    }
     const edge = (pts, side) => {
         for (let i = 1; i < pts.length; i++)
-            out.lines.push(pts[i - 1].x + dx, pts[i - 1].y + dy, zAt(pts[i - 1].x)[side], pts[i].x + dx, pts[i].y + dy, zAt(pts[i].x)[side]);
+            out.lines.push(pts[i - 1].x + dx, pts[i - 1].y + dy, zAt(i - 1, pts[i - 1].x)[side], pts[i].x + dx, pts[i].y + dy, zAt(i, pts[i].x)[side]);
     };
     for (const side of [0, 1]) {
         edge(r.lo, side);
         edge(r.hi, side);
     }
     if (r.lo[0] && r.hi[0]) {
-        const [c0, c1] = zAt(r.lo[0].x);
+        const [c0, c1] = zAt(0, r.lo[0].x);
         out.lines.push(r.lo[0].x + dx, r.lo[0].y + dy, c0, r.hi[0].x + dx, r.hi[0].y + dy, c0);
         out.lines.push(r.lo[0].x + dx, r.lo[0].y + dy, c1, r.hi[0].x + dx, r.hi[0].y + dy, c1);
     }
     const la = r.lo[n - 1];
     const ha = r.hi[n - 1];
     if (la && ha) {
-        const [c0, c1] = zAt(la.x);
+        const [c0, c1] = zAt(n - 1, la.x);
         out.lines.push(la.x + dx, la.y + dy, c0, ha.x + dx, ha.y + dy, c0);
         out.lines.push(la.x + dx, la.y + dy, c1, ha.x + dx, ha.y + dy, c1);
     }
@@ -373,7 +491,24 @@ const cssVar = (name, fallback) => {
     return v || fallback;
 };
 export function threeView(plan, str, masses, stepTitle) {
-    const phases = buildPhases(plan, str, masses).flatMap((q) => q.kind === "fold" ? [q, { ...q, kind: "relax", label: str.relief, dur: 1.3, a: q.b, b: q.b }] : [q]);
+    const windStep = String(plan.steps.length);
+    const pacStep = String(plan.steps.length + 1);
+    const makes = { croissants: plan.allocation.croissants > 0, pac: plan.allocation.pac > 0 };
+    const phases = buildPhases(plan, str, masses).flatMap((q) => {
+        if (q.kind === "fold")
+            return [q, { ...q, kind: "relax", label: str.relief, dur: 1.3, a: q.b, b: q.b }];
+        if (q.kind === "shape") {
+            const tri = { w: plan.croissant.base, l: plan.croissant.height, t: q.b.t, layers: q.b.layers };
+            const rect = { w: plan.pac.width, l: plan.pac.height, t: q.b.t, layers: q.b.layers };
+            const out = [q];
+            if (makes.croissants)
+                out.push({ ...q, kind: "wind", step: windStep, label: str.wind, dur: 3, a: tri, b: tri });
+            if (makes.pac)
+                out.push({ ...q, kind: "pac", step: pacStep, label: str.pac, dur: 3.6, a: rect, b: rect });
+            return out;
+        }
+        return [q];
+    });
     const chapters = chaptersOf(phases);
     const butterFrac = butterFraction(plan);
     const exaggeration = exaggerationFor(phases);
@@ -382,6 +517,7 @@ export function threeView(plan, str, masses, stepTitle) {
         return st ? (st.roll.l - st.trimmed.l) / 2 : null;
     })();
     const total = phases.reduce((n, q) => n + q.dur, 0);
+    const movie = phases.reduce((n, q) => (isClose(q.kind) ? n : n + q.dur), 0);
     const cutShare = plan.allocation.stripBreakdown.find((b) => b.strip === 1) ?? null;
     const noses = new Map();
     for (const q of phases)
@@ -429,18 +565,27 @@ export function threeView(plan, str, masses, stepTitle) {
     root.appendChild(bar);
     const chapterBar = document.createElement("div");
     chapterBar.className = "chapters";
+    const pieceBar = document.createElement("div");
+    pieceBar.className = "chapters pieces";
+    const pieceLabel = document.createElement("span");
+    pieceLabel.className = "chapterslabel";
+    pieceLabel.textContent = str.pieces;
+    pieceBar.appendChild(pieceLabel);
+    const isPiece = chapters.map((c) => !plan.steps.some((x) => x.id === c.step));
     const chips = chapters.map((c) => {
         const step = plan.steps.find((x) => x.id === c.step);
         const b = document.createElement("button");
         b.type = "button";
         b.className = "chapter";
-        const title = stepTitle(step);
-        b.textContent = `${step.id}. ${c.kind === "prep" ? fill(str.prep, { step: title }) : title}`;
-        b.title = str.chapter;
-        chapterBar.appendChild(b);
+        const title = step ? stepTitle(step) : c.step === pacStep ? str.pacStep : str.windStep;
+        b.textContent = step ? `${c.step}. ${c.kind === "prep" ? fill(str.prep, { step: title }) : title}` : title;
+        b.title = step ? str.chapter : str.pieceChapter;
+        (step ? chapterBar : pieceBar).appendChild(b);
         return b;
     });
     root.appendChild(chapterBar);
+    if (makes.croissants || makes.pac)
+        root.appendChild(pieceBar);
     let time = 0;
     let playing = false;
     let stopAt = null;
@@ -453,8 +598,24 @@ export function threeView(plan, str, masses, stepTitle) {
     };
     paintScale();
     const paintPlay = () => {
-        playBtn.textContent = playing ? "❙❙" : time >= total - 1e-6 ? "↺" : "▶";
-        playBtn.title = playing ? str.pause : time >= total - 1e-6 ? str.replay : str.play;
+        const end = sec.to;
+        playBtn.textContent = playing ? "❙❙" : time >= end - 1e-6 ? "↺" : "▶";
+        playBtn.title = playing ? str.pause : time >= end - 1e-6 ? str.replay : str.play;
+    };
+    let watching = "film";
+    const moment = () => {
+        const from = watching === "film" ? 0 : sec.from;
+        const to = watching === "film" ? movie : sec.to;
+        return Math.min(Math.max(time, from + 1e-6), Math.max(from, to - 1e-6));
+    };
+    let sec = { from: 0, to: movie };
+    const watchFilm = () => {
+        watching = "film";
+        sec = { from: 0, to: movie };
+    };
+    const watchPiece = (c) => {
+        watching = "piece";
+        sec = { from: c.from, to: c.to };
     };
     const phaseAt = (tm) => {
         let left = tm;
@@ -491,11 +652,12 @@ export function threeView(plan, str, masses, stepTitle) {
         }, { capture: true });
         const doughColor = new T.Color(cssVar("--dough", "#e9d9b6"));
         const butterColor = new T.Color(cssVar("--butter", "#f6edcd"));
-        const lineColor = new T.Color(cssVar("--line", "#3a3a42"));
+        const lineColor = new T.Color(cssVar("--stroke", "#3a3a42"));
         const mat = (c) => new T.MeshBasicMaterial({ color: c, transparent: true, side: T.DoubleSide });
         const doughMat = mat(doughColor);
         const butterMat = mat(butterColor);
         const lineMat = new T.LineBasicMaterial({ color: lineColor, transparent: true, opacity: 0.75 });
+        const chocMat = new T.MeshBasicMaterial({ color: new T.Color(cssVar("--chocbar", "#4a2d1e")), side: T.DoubleSide });
         const knifeMat = new T.MeshBasicMaterial({
             color: new T.Color(cssVar("--bad", "#e4645a")),
             transparent: true,
@@ -513,7 +675,11 @@ export function threeView(plan, str, masses, stepTitle) {
             for (const o of built) {
                 group.remove(o);
                 o.geometry.dispose();
-                if (o.material !== doughMat && o.material !== butterMat && o.material !== lineMat && o.material !== knifeMat)
+                if (o.material !== doughMat &&
+                    o.material !== butterMat &&
+                    o.material !== lineMat &&
+                    o.material !== knifeMat &&
+                    o.material !== chocMat)
                     o.material.dispose();
             }
             built = [];
@@ -545,19 +711,20 @@ export function threeView(plan, str, masses, stepTitle) {
                     const hx = (x1 - x0) / 2;
                     const hz = (z1 - z0) / 2;
                     const wide = q.kind === "rotate" ? Math.max(hx, hz) : hx;
-                    out.push({ hx: wide, hy: (y1 - y0) / 2, hz: q.kind === "rotate" ? wide : hz });
+                    out.push({ hx: wide, hy: (y1 - y0) / 2, hz: q.kind === "rotate" ? wide : hz, kind: q.kind });
                 }
             }
-            return out.length ? out : [{ hx: 1, hy: 1, hz: 1 }];
+            return out.length ? out : [{ hx: 1, hy: 1, hz: 1, kind: "roll" }];
         })();
+        const runExtents = extents.filter((e) => !isClose(e.kind));
+        const rollExtents = extents.filter((e) => isClose(e.kind));
         const VIEW_DIR = (() => {
             const d = [0.7, 0.5, 1];
             const m = Math.hypot(...d);
             return d.map((c) => c / m);
         })();
         let box = { x: 0, y: 0, z: 0, dx: 2 * extents[0].hx, dy: 1, dz: 2 * extents[0].hz };
-        const home = () => {
-            const [dx, dy, dz] = VIEW_DIR;
+        const fitDistance = (es, [dx, dy, dz]) => {
             const right = [dz, 0, -dx];
             const rm = Math.hypot(right[0], right[2]) || 1;
             right[0] /= rm;
@@ -570,7 +737,7 @@ export function threeView(plan, str, masses, stepTitle) {
             const tv = Math.tan((FOV * Math.PI) / 360);
             const th = tv * Math.max(1, camera.aspect || 2);
             let dist = 1;
-            for (const e of extents)
+            for (const e of es)
                 for (const sx of [-1, 1])
                     for (const sy of [-1, 1])
                         for (const sz of [-1, 1]) {
@@ -580,16 +747,36 @@ export function threeView(plan, str, masses, stepTitle) {
                             const up = Math.abs(p[0] * upv[0] + p[1] * upv[1] + p[2] * upv[2]);
                             dist = Math.max(dist, depth + Math.max(r / th, up / tv));
                         }
-            dist *= 1.06;
-            camera.position.set(dx * dist, dy * dist, dz * dist);
+            return dist * 1.06;
+        };
+        const home = () => {
+            const es = isClose(phaseAt(moment()).p.kind) ? rollExtents : runExtents;
+            const d = fitDistance(es.length ? es : extents, VIEW_DIR);
+            camera.position.set(VIEW_DIR[0] * d, VIEW_DIR[1] * d, VIEW_DIR[2] * d);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        };
+        const dolly = (es) => {
+            const p = camera.position;
+            const m = Math.hypot(p.x, p.y, p.z) || 1;
+            const dir = [p.x / m, p.y / m, p.z / m];
+            const d = fitDistance(es.length ? es : extents, dir);
+            camera.position.set(dir[0] * d, dir[1] * d, dir[2] * d);
             controls.target.set(0, 0, 0);
             controls.update();
         };
         home();
         resetBtn.addEventListener("click", home);
         faceBtn.addEventListener("click", () => {
-            const face = Math.max(box.dz, box.dy) / (2 * Math.tan((FOV * Math.PI) / 360));
-            camera.position.set(box.dx / 2 + face * 1.15, 0, 0);
+            const tan = 2 * Math.tan((FOV * Math.PI) / 360);
+            if (isClose(phaseAt(moment()).p.kind)) {
+                const face = Math.max(box.dx, box.dy) / tan;
+                camera.position.set(0, 0, box.dz / 2 + face * 1.15);
+            }
+            else {
+                const face = Math.max(box.dz, box.dy) / tan;
+                camera.position.set(box.dx / 2 + face * 1.15, 0, 0);
+            }
             controls.target.set(0, 0, 0);
             controls.update();
         });
@@ -603,8 +790,13 @@ export function threeView(plan, str, masses, stepTitle) {
             camera.updateProjectionMatrix();
         };
         let drawn = null;
+        let framed = null;
         const render = () => {
-            const { p, u } = phaseAt(time);
+            const { p, u } = phaseAt(moment());
+            const want = isClose(p.kind) ? "roll" : "run";
+            if (framed !== null && want !== framed)
+                dolly(want === "roll" ? rollExtents : runExtents);
+            framed = want;
             const k = exaggerate ? exaggeration : 1;
             const key = `${p.step}|${p.kind}|${u}|${k}`;
             if (key === drawn) {
@@ -623,7 +815,7 @@ export function threeView(plan, str, masses, stepTitle) {
                 const out = piece.fade > 0.01 ? { dough: emptyMesh(), butter: emptyMesh(), fade: piece.fade } : null;
                 for (const r of piece.ribbons) {
                     const bucket = out ? (r.kind === "butter" ? out.butter : out.dough) : r.kind === "butter" ? butter : dough;
-                    extrude(r, piece.width, piece.offset.x, piece.offset.y, piece.offset.z, bucket, piece.taper);
+                    extrude(r, piece.width, piece.offset.x, piece.offset.y, piece.offset.z, bucket, piece.taper, piece.shrink);
                 }
                 if (out)
                     faded.push(out);
@@ -655,6 +847,41 @@ export function threeView(plan, str, masses, stepTitle) {
             for (const f of faded) {
                 add(f.dough, doughMat, 1 - f.fade);
                 add(f.butter, butterMat, 1 - f.fade);
+            }
+            if (sc.batons?.length && sc.pac) {
+                const pos = [];
+                const lines = [];
+                const hz = sc.pac.baton / 2;
+                const half = batonHalf();
+                for (const b of sc.batons) {
+                    const cs = Math.cos(b.rot);
+                    const sn2 = Math.sin(b.rot);
+                    const corner = (sx, sy) => [
+                        b.x + sx * half.w * cs - sy * half.h * sn2,
+                        b.y + sx * half.w * sn2 + sy * half.h * cs,
+                    ];
+                    const c4 = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)];
+                    const tri = (a, az, b2, bz, c3, cz) => pos.push(a[0], a[1], az, b2[0], b2[1], bz, c3[0], c3[1], cz);
+                    for (let i = 0; i < 4; i++) {
+                        const a = c4[i];
+                        const b2 = c4[(i + 1) % 4];
+                        tri(a, -hz, b2, -hz, b2, hz);
+                        tri(a, -hz, b2, hz, a, hz);
+                        for (const z of [-hz, hz])
+                            lines.push(a[0], a[1], z, b2[0], b2[1], z);
+                        lines.push(a[0], a[1], -hz, a[0], a[1], hz);
+                    }
+                    for (const z of [-hz, hz]) {
+                        tri(c4[0], z, c4[1], z, c4[2], z);
+                        tri(c4[0], z, c4[2], z, c4[3], z);
+                    }
+                }
+                const bar = new T.Mesh(buildGeom(pos), chocMat);
+                group.add(bar);
+                built.push(bar);
+                const ln = new T.LineSegments(buildGeom(lines), lineMat);
+                group.add(ln);
+                built.push(ln);
             }
             if (sc.knife?.length) {
                 const pos = [];
@@ -721,7 +948,8 @@ export function threeView(plan, str, masses, stepTitle) {
             if (drawnLayers(sc.layers) < sc.layers)
                 line(fill(str.layersGrouped, { n: Math.round(sc.layers / drawnLayers(sc.layers)) }), "hudnose");
             line(fill(str.volumeLabel, { v: r1(sc.volume) }));
-            note.textContent = exaggerate ? fill(str.scaleNote, { k: exaggeration }) : str.scaleTrue;
+            const shown = sc.scale ?? (exaggerate ? exaggeration : 1);
+            note.textContent = shown > 1.001 ? fill(str.scaleNote, { k: r1(shown) }) : str.scaleTrue;
             if (sc.nose)
                 line(fill(str.noseNote, { nose: r1(Math.max(sc.nose.ragged, sc.nose.round)) }), "hudnose");
             if (sc.relief) {
@@ -733,6 +961,20 @@ export function threeView(plan, str, masses, stepTitle) {
             }
             if (sc.trim !== null)
                 line(fill(str.trimNote, { trim: r1(sc.trim) }), "hudnose");
+            if (sc.roll)
+                line(fill(str.windNote, {
+                    base: r1(sc.roll.base),
+                    h: r1(sc.roll.height),
+                    turns: Math.round(sc.roll.turns * 10) / 10,
+                }), "hudnose");
+            if (sc.pac)
+                line(fill(sc.pac.over > 0.001 ? str.pacNote : str.pacFits, {
+                    w: r1(sc.pac.w),
+                    h: r1(sc.pac.h),
+                    n: sc.pac.batons,
+                    baton: r1(sc.pac.baton),
+                    over: r1(Math.abs(sc.pac.over)),
+                }), "hudnose");
             if (p.kind === "shape" && u > CUT_SHOWN && cutShare) {
                 line(fill(str.share, { n: plan.strips, pac: cutShare.pac, cro: cutShare.croissants }), "hudnose");
                 if (plan.strips > 1)
@@ -767,14 +1009,18 @@ export function threeView(plan, str, masses, stepTitle) {
             note.textContent = str.unsupported;
     });
     playBtn.addEventListener("click", () => {
-        if (time >= total - 1e-6)
-            time = 0;
+        if (time >= sec.to - 1e-6)
+            time = sec.from;
         playing = !playing;
-        stopAt = null;
+        stopAt = playing ? sec.to : null;
         paintPlay();
     });
     scrub.addEventListener("input", () => {
         time = (Number(scrub.value) / 1000) * total;
+        if (time > movie + 1e-6)
+            watchPiece(chapters[chapterAt(chapters, time)]);
+        else
+            watchFilm();
         playing = false;
         stopAt = null;
         paintPlay();
@@ -787,6 +1033,10 @@ export function threeView(plan, str, masses, stepTitle) {
         b.addEventListener("click", () => {
             time = chapters[i].from;
             stopAt = chapters[i].to;
+            if (isPiece[i])
+                watchPiece(chapters[i]);
+            else
+                watchFilm();
             playing = true;
             paintPlay();
         });
@@ -797,8 +1047,8 @@ export function threeView(plan, str, masses, stepTitle) {
     const loop = (now) => {
         const dt = Math.min(0.1, (now - last) / 1000);
         last = now;
-        const { p } = phaseAt(time);
-        const i = chapterAt(chapters, time);
+        const { p } = phaseAt(moment());
+        const i = chapterAt(chapters, moment());
         chips.forEach((b, k) => b.classList.toggle("on", k === i));
         caption.textContent = `${p.step}. ${p.label}`;
         try {

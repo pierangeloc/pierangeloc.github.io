@@ -62,31 +62,81 @@
   --ink: #dbdbdb;
   --muted: #9a9a9a;
   --line: #474747;
+  /* The line work *in the drawings* — the layer edges in the 3D view, the strokes in the flat
+     one — as against `--line`, which borders the page's boxes. They are the same grey on the
+     dark page and cannot be on the light one: a border wants to be barely there against the
+     background, and a layer edge has to read against the dough. */
+  --stroke: #474747;
   --accent: #d8a657;
+  /* Ink on the accent, for the one badge that sits on it. */
+  --on-accent: #1a1407;
   /* Butter has to read against the dough, and the dough is drawn in the accent gold. */
   --butter: #f6edcd;
+  /* The butter when it is a word rather than a layer: the 3D view's frame names the count in
+     it. On the dark page that is the butter's own colour; on the light one a pale cream on
+     paper is no colour at all, so it darkens with the rest. */
+  --butter-text: #f6edcd;
   /* The dough as a solid mass, for the 3D view: the accent gold knocked back, so that
      twelve butter layers still read as the lighter thing inside it. */
   --dough: #c08f4a;
   /* Pain au chocolat, so the two products are told apart at a glance. */
   --choc: #a9714a;
+  /* The chocolate itself — the batons inside a pain au chocolat in the 3D view. Darker than
+     `--choc`, which only has to separate the two products in a list; this one has to read as
+     chocolate while it is surrounded by dough. */
+  --chocbar: #4a2d1e;
   --bad: #e06c63;
   --ok: #7fb069;
   /* TeX does not round its boxes. Not zero: a hair of a radius keeps the panels from
      looking like they were drawn by a different program than the rest of the page. */
   --radius: 3px;
-  /* The page's one typeface, named once so the phone can swap it (see the media query
-     at the end of the file) without every rule that sets `font: inherit` noticing. */
-  --face: "Latin Modern", Georgia, Cambria, "Times New Roman", Times, serif;
+  /* The page's one typeface, named once so that every rule setting `font: inherit` follows it.
+     Computer Modern Sans — the face Beamer sets its slides in — on every width, because it is
+     the more readable of the two here (Pierangelo, 26 October 2026). Latin Modern's serifs are
+     hairlines, and a screen turns them into fringe at any size, not only on a phone. Put the
+     serif back by naming it first in this stack; both are loaded above. */
+  --face: "CMU Sans", "Latin Modern", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  /* The page's text size, from which every other size is a fraction (the rules below are in
+     `rem`, and this is what a `rem` is). The buttons in the header move it. */
+  --size: 15.5px;
+}
+
+/* The light page. Only the palette changes: every rule above and below names its colours, and
+   the two drawings read theirs from these same properties at run time, so neither has a theme
+   of its own to keep in step. Paper rather than white — the dough is a gold, and a cold white
+   under it looks like a mistake. The accent goes darker, because a gold that reads on a dark
+   page is illegible on a light one. */
+:root[data-theme="light"] {
+  --bg: #faf8f3;
+  --panel: #ffffff;
+  --row: #f1eee7;
+  --row-hi: #e3ded3;
+  --fillbar: #cdc7b9;
+  --ink: #23211c;
+  --muted: #6d675c;
+  --line: #ded8cc;
+  --stroke: #6b6458;
+  --accent: #9a6508;
+  --on-accent: #fffaf0;
+  --butter: #f2e6bb;
+  --butter-text: #8a6410;
+  --dough: #c89a57;
+  --choc: #9c6440;
+  --chocbar: #4a2d1e;
+  --bad: #c0392b;
+  --ok: #4f7a3a;
 }
 
 * { box-sizing: border-box; }
+
+html { font-size: var(--size); }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 15px/1.42 var(--face);
+  /* CMU Sans runs a little smaller than Latin Modern at the same size, so the half point back. */
+  font: 1rem/1.42 var(--face);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -99,15 +149,22 @@ header {
   max-width: 1500px;
   margin: 0 auto;
 }
-header h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: 0; }
+header h1 { margin: 0; font-size: 1.9355rem; font-weight: 700; letter-spacing: 0; }
 header p { margin: 4px 0 0; color: var(--muted); }
 .tools { display: flex; gap: 8px; align-items: center; }
 .langs { display: flex; background: var(--row); border-radius: 8px; padding: 2px; }
 .langs button {
-  background: none; border: 0; color: var(--muted); font: inherit; font-size: 12px;
+  background: none; border: 0; color: var(--muted); font: inherit; font-size: 0.7742rem;
   font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer;
 }
 .langs button.on { background: var(--row-hi); color: var(--ink); }
+
+/* Light or dark, and the text bigger or smaller. Symbols with tooltips rather than words: they
+   are set once and then never read again, and the header is for the plan, not for them. */
+.styles { display: flex; background: var(--row); border-radius: 8px; padding: 2px; }
+.styles button { padding: 4px 8px; }
+.styles button:disabled { opacity: 0.3; cursor: default; background: none; }
+.styles .size { font-weight: 600; }
 
 .resetbtn {
   display: inline-flex;
@@ -117,7 +174,7 @@ header p { margin: 4px 0 0; color: var(--muted); }
   border: 1px solid var(--line);
   color: var(--ink);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 0.8065rem;
   padding: 6px 11px;
   border-radius: 8px;
   cursor: pointer;
@@ -126,21 +183,21 @@ header p { margin: 4px 0 0; color: var(--muted); }
 }
 .resetbtn:hover:not(:disabled) { border-color: var(--accent); }
 .resetbtn:disabled { opacity: 0.4; cursor: default; }
-.resetbtn .ico { font-size: 14px; line-height: 1; }
+.resetbtn .ico { font-size: 0.9032rem; line-height: 1; }
 .resetbtn .count:not(:empty) {
   min-width: 17px;
   padding: 1px 5px;
   border-radius: 9px;
   background: var(--accent);
-  color: #1a1407;
-  font-size: 11px;
+  color: var(--on-accent);
+  font-size: 0.7097rem;
   font-weight: 650;
   text-align: center;
 }
 
 .iconbtn {
   background: none; border: 0; color: var(--muted); cursor: pointer;
-  font-size: 15px; padding: 4px 7px; border-radius: 6px; line-height: 1;
+  font-size: 0.9677rem; padding: 4px 7px; border-radius: 6px; line-height: 1;
 }
 .iconbtn:hover { background: var(--row-hi); color: var(--ink); }
 
@@ -161,7 +218,7 @@ main {
 .sec { background: var(--panel); border-radius: var(--radius); padding: 10px; }
 .sechead { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 8px; }
 .sechead h2 {
-  margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
+  margin: 0; font-size: 0.8387rem; font-weight: 700; letter-spacing: 0.03em;
   font-variant-caps: small-caps; color: var(--muted);
 }
 .sechead .iconbtn { opacity: 0; transition: opacity 0.12s, color 0.12s; }
@@ -211,7 +268,7 @@ main {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.unit { color: var(--muted); font-size: 12.5px; }
+.unit { color: var(--muted); font-size: 0.8065rem; }
 
 /* ---- outlined number field ---- */
 
@@ -237,7 +294,7 @@ main {
   padding: 0 4px;
   background: var(--panel);
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.7097rem;
   line-height: 12px;
   white-space: nowrap;
   overflow: hidden;
@@ -279,7 +336,7 @@ main {
   align-items: center;
   padding-right: 6px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.7742rem;
 }
 
 .steppers {
@@ -308,7 +365,7 @@ main {
   margin: 4px 0 0;
   padding: 0 2px;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 0.6774rem;
   line-height: 1.3;
   min-height: 1px;
 }
@@ -333,7 +390,7 @@ main {
 .link {
   margin-top: 10px;
   background: none; border: 0; cursor: pointer; color: var(--muted); opacity: 0.45;
-  font-size: 12px; padding: 3px 4px; border-radius: 5px; line-height: 1;
+  font-size: 0.7742rem; padding: 3px 4px; border-radius: 5px; line-height: 1;
 }
 .link:hover { opacity: 1; }
 .link.on { opacity: 1; color: var(--accent); background: var(--fillbar); }
@@ -360,7 +417,7 @@ main {
 .row.choice .label { white-space: normal; }
 .badge {
   position: absolute; top: -7px; left: -5px; width: 13px; height: 13px; line-height: 13px;
-  border-radius: 50%; background: var(--fillbar); color: var(--ink); font-size: 9px;
+  border-radius: 50%; background: var(--fillbar); color: var(--ink); font-size: 0.5806rem;
   text-align: center; opacity: 0; transition: opacity 0.12s;
 }
 .row.choice:hover .badge, .row.choice:focus-within .badge { opacity: 1; }
@@ -384,7 +441,7 @@ main {
 
 .link {
   background: none; border: 0; cursor: pointer; color: var(--muted); opacity: 0.45;
-  font-size: 13px; padding: 2px 4px; border-radius: 5px;
+  font-size: 0.8387rem; padding: 2px 4px; border-radius: 5px;
 }
 .link:hover { opacity: 1; }
 .link.on { opacity: 1; color: var(--accent); background: var(--fillbar); }
@@ -394,7 +451,7 @@ main {
 #out { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
 .status .tag {
-  display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
+  display: inline-block; font-size: 0.8387rem; font-weight: 700; letter-spacing: 0.03em;
   font-variant-caps: small-caps; padding: 3px 10px; border-radius: 2px;
 }
 .status.ok .tag { background: rgba(127, 176, 105, 0.15); color: var(--ok); }
@@ -407,7 +464,7 @@ main {
   padding: 10px 16px;
 }
 .warnings h3 {
-  margin: 0 0 4px; font-size: 13.5px; letter-spacing: 0.03em; font-variant-caps: small-caps;
+  margin: 0 0 4px; font-size: 0.871rem; letter-spacing: 0.03em; font-variant-caps: small-caps;
   font-weight: 700; color: var(--bad);
 }
 .warnings ul { margin: 0; padding-left: 18px; }
@@ -422,10 +479,10 @@ table {
   background: none;
   border-top: 1.5px solid var(--ink);
   border-bottom: 1.5px solid var(--ink);
-  font-size: 13.5px;
+  font-size: 0.871rem;
 }
 th {
-  text-align: left; font-size: 12.5px; letter-spacing: 0.03em;
+  text-align: left; font-size: 0.8065rem; letter-spacing: 0.03em;
   font-variant-caps: small-caps;
   color: var(--ink); font-weight: 700; padding: 7px 12px;
   background: none; border-bottom: 0.8px solid var(--ink);
@@ -445,11 +502,11 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 .opts tr.first td { border-top: 1px solid var(--line); padding-top: 9px; }
 .opts tr.last td { padding-bottom: 9px; }
 .opts td:first-child, .opts th:first-child { min-width: 0; }
-.opts .n { color: var(--muted); font-size: 12px; }
+.opts .n { color: var(--muted); font-size: 0.7742rem; }
 .opts .pin, .opts .from { text-align: right; }
 .opts .pin { color: var(--muted); }
 .opts .to { text-align: right; color: var(--accent); }
-.opts .mm { color: var(--muted); font-size: 12px; text-align: right; }
+.opts .mm { color: var(--muted); font-size: 0.7742rem; text-align: right; }
 /* A cut spans the roll-out columns, so it is centred on them rather than borrowing the
    right alignment the action column asks for. */
 .opts td.cut { color: var(--muted); text-align: center; }
@@ -469,26 +526,15 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 .opts tr.applied td[rowspan] { box-shadow: inset 0 -1px 0 var(--accent); }
 .opts tr.applied td.act { box-shadow: inset 0 -1px 0 var(--accent), inset -2px 0 0 var(--accent); }
 
-.line { margin: 0; color: var(--muted); font-size: 13.5px; }
+.line { margin: 0; color: var(--muted); font-size: 0.871rem; }
 .yield { background: var(--panel); border-radius: var(--radius); padding: 14px 16px; }
 .yield p { margin: 3px 0; }
-.yield .big { font-size: 16px; font-weight: 600; }
-.yield .muted, .muted { color: var(--muted); font-size: 13px; }
+.yield .big { font-size: 1.0323rem; font-weight: 600; }
+.yield .muted, .muted { color: var(--muted); font-size: 0.8387rem; }
 
 @media (max-width: 900px) {
   main { grid-template-columns: 1fr; }
   #panel { position: static; }
-}
-
-/* Narrow, the page is set in the sans. Not a different design — the same Computer Modern,
-   without the hairline serifs that a small dark screen turns into fringe. The threshold is the
-   same 900 px the layout already breaks at: one column and one typeface change together, so
-   there is no width at which the page is in the phone's shape and the print's face. To put the
-   whole page in the sans, move `--face` to `:root` instead. CMU Sans runs a little smaller on
-   the body than Latin Modern at the same size, so the narrow page gets the half point back. */
-@media (max-width: 900px) {
-  :root { --face: "CMU Sans", "Latin Modern", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif; }
-  body { font-size: 15.5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -501,7 +547,7 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
   grid-column: 1 / -1;
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.7742rem;
 }
 .fix {
   display: flex;
@@ -514,7 +560,7 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 .fix.none { color: var(--muted); }
 .applyfix {
   flex: none;
-  background: var(--fillbar); color: var(--ink); font: inherit; font-size: 12px;
+  background: var(--fillbar); color: var(--ink); font: inherit; font-size: 0.7742rem;
   border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; cursor: pointer;
   white-space: nowrap;
 }
@@ -530,7 +576,7 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 }
 .animbox h3 {
   margin: 0 0 6px;
-  font-size: 13.5px; font-weight: 700; letter-spacing: 0.03em; font-variant-caps: small-caps;
+  font-size: 0.871rem; font-weight: 700; letter-spacing: 0.03em; font-variant-caps: small-caps;
   color: var(--muted);
 }
 .stage { width: 100%; height: auto; display: block; background: var(--bg); border-radius: 8px; }
@@ -550,11 +596,11 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 .animbtn {
   flex: none; width: 30px; height: 30px; border-radius: 50%;
   background: var(--row-hi); color: var(--ink); border: 1px solid var(--line);
-  font: inherit; font-size: 13px; cursor: pointer;
+  font: inherit; font-size: 0.8387rem; cursor: pointer;
 }
 .animbtn:hover { border-color: var(--accent); }
 .animscrub { flex: 1; accent-color: var(--accent); min-width: 0; }
-.animcap { flex: none; color: var(--muted); font-size: 12px; min-width: 14em; text-align: right; }
+.animcap { flex: none; color: var(--muted); font-size: 0.7742rem; min-width: 14em; text-align: right; }
 .stage .butter { fill: var(--butter); opacity: 0.85; stroke: var(--butter); stroke-width: 1; }
 .stage .knife { stroke: var(--bad); stroke-width: 2; stroke-dasharray: 8 5; }
 .stage .panel { stroke-width: 1.2; }
@@ -569,13 +615,20 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 
 .chapters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .chapter {
-  background: none; color: var(--muted); font: inherit; font-size: 12px;
+  background: none; color: var(--muted); font: inherit; font-size: 0.7742rem;
   border: 0.8px solid var(--line); border-radius: 2px; padding: 3px 10px; cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .chapter:hover { color: var(--ink); border-color: var(--fillbar); }
+/* The rolls: their own row under the plan's, separated by a rule, because they are not
+   part of the film the play button runs. */
+.chapters.pieces {
+  align-items: center; margin-top: 8px; padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+.chapterslabel { color: var(--muted); font-size: 0.7742rem; }
 .chapter.on { background: var(--row-hi); color: var(--ink); border-color: var(--accent); }
-.animbtn.mute { font-size: 12px; }
+.animbtn.mute { font-size: 0.7742rem; }
 .animbtn.mute.off { color: var(--muted); }
 .stage .counter { fill: var(--ink); font-size: 20px; font-family: inherit; font-variant-numeric: tabular-nums; }
 .stage .counterlabel { fill: var(--muted); font-size: 11px; font-family: inherit; }
@@ -593,12 +646,12 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 }
 .options h3 {
   margin: 0 0 8px;
-  font-size: 13.5px; font-weight: 700; letter-spacing: 0.03em; font-variant-caps: small-caps;
+  font-size: 0.871rem; font-weight: 700; letter-spacing: 0.03em; font-variant-caps: small-caps;
   color: var(--muted);
 }
 /* The action column, not "whatever cell happens to be last": a cut row ends early. */
 .options td.act { text-align: right; }
-.options .muted { margin: 8px 0 0; font-size: 12px; }
+.options .muted { margin: 8px 0 0; font-size: 0.7742rem; }
 .stage .pac { fill: var(--choc); fill-opacity: 0.35; stroke: var(--choc); stroke-width: 1; }
 .secnote.bad { color: var(--bad); }
 
@@ -608,7 +661,7 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 .animtabs { display: flex; gap: 4px; }
 .animtab {
   background: none; border: 1px solid var(--line); color: var(--muted);
-  border-radius: 2px; padding: 3px 12px; font: inherit; font-size: 13px; cursor: pointer;
+  border-radius: 2px; padding: 3px 12px; font: inherit; font-size: 0.8387rem; cursor: pointer;
 }
 .animtab:hover { color: var(--ink); border-color: var(--fillbar); }
 .animtab.on { background: var(--row-hi); color: var(--ink); border-color: var(--accent); }
@@ -627,17 +680,17 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 .threehud {
   position: absolute; top: 10px; left: 12px; pointer-events: none;
   display: flex; flex-direction: column; gap: 2px;
-  font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
+  font-size: 0.7742rem; color: var(--muted); font-variant-numeric: tabular-nums;
 }
 .threehud .hudstep { color: var(--ink); }
-.threehud .hudbig { color: var(--butter); font-size: 20px; }
+.threehud .hudbig { color: var(--butter-text); font-size: 1.2903rem; }
 .threehud .hudnose { color: var(--accent); }
 .threehud .hudwarn { color: var(--bad); }
 /* The one declared vertical scale, always in the frame — as the flat view's edge note says
    "spessore fuori scala", this says by how much. */
 .threenote {
   position: absolute; right: 12px; bottom: 10px; pointer-events: none;
-  font-size: 11px; color: var(--muted); max-width: 55%; text-align: right;
+  font-size: 0.7097rem; color: var(--muted); max-width: 55%; text-align: right;
 }
 .threetools { display: flex; gap: 4px; margin-left: auto; }
 
@@ -651,14 +704,14 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
   margin-bottom: 4px;
 }
 .turn h4 {
-  margin: 0 0 2px 5px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em;
+  margin: 0 0 2px 5px; font-size: 0.8065rem; font-weight: 700; letter-spacing: 0.03em;
   font-variant-caps: small-caps; color: var(--muted);
 }
 /* six options and a label do not fit side by side in one column of the panel's grid,
      so inside a turn the label goes above its options */
 .turn .row { border: 0; min-height: 0; flex-direction: column; align-items: stretch; gap: 1px; padding: 2px 5px 4px; }
 .turn .row .fill { width: 100%; }
-.turn .row .label { font-size: 11px; color: var(--muted); }
+.turn .row .label { font-size: 0.7097rem; color: var(--muted); }
 .turn .seg { justify-content: flex-start; }
 .turn .segbtn { padding: 3px 7px; }
 .turn .field { margin: 10px 5px 4px; }
@@ -666,23 +719,23 @@ td:nth-child(2), th:nth-child(2) { font-variant-numeric: tabular-nums; }
 .turnrm {
   position: absolute; top: 4px; right: 4px;
   background: none; border: 0; cursor: pointer; color: var(--muted);
-  font-size: 13px; line-height: 1; padding: 2px 5px; border-radius: 5px; opacity: 0;
+  font-size: 0.8387rem; line-height: 1; padding: 2px 5px; border-radius: 5px; opacity: 0;
   transition: opacity 0.12s, color 0.12s, background 0.12s;
 }
 .turn:hover .turnrm { opacity: 0.5; }
 .turnrm:hover { opacity: 1; color: var(--bad); background: var(--row-hi); }
 .addturn {
   width: 100%; background: none; border: 1px dashed var(--line); border-radius: 7px;
-  color: var(--muted); font: inherit; font-size: 12px; padding: 6px; cursor: pointer;
+  color: var(--muted); font: inherit; font-size: 0.7742rem; padding: 6px; cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
 .addturn:hover { border-color: var(--accent); color: var(--ink); }
 .secbody > .addturn, .secbody > .presets, .secbody > .turn { grid-column: span 1; }
 .presets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px 6px 2px; }
-.presets .label { color: var(--muted); font-size: 11px; }
+.presets .label { color: var(--muted); font-size: 0.7097rem; }
 .preset {
   background: var(--row-hi); border: 1px solid var(--line); border-radius: 6px;
-  color: var(--ink); font: inherit; font-size: 12px; padding: 4px 9px; cursor: pointer;
+  color: var(--ink); font: inherit; font-size: 0.7742rem; padding: 4px 9px; cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 .preset:hover { border-color: var(--accent); background: var(--fillbar); }
