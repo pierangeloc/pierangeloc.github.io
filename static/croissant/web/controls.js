@@ -328,8 +328,8 @@ export function vec2(o, modifiedTitle) {
         },
     };
 }
-export function section(title, resetLabel, onReset) {
-    const wrap = el("section", "sec");
+export function section(title, resetLabel, onReset, quiet = false) {
+    const wrap = el("section", quiet ? "sec quiet" : "sec");
     const head = el("div", "sechead");
     head.appendChild(el("h2", undefined, title));
     const rst = el("button", "iconbtn", "↺");

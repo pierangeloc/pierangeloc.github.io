@@ -215,12 +215,30 @@ main {
 
 #panel { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 16px; }
 
-.sec { background: var(--panel); border-radius: var(--radius); padding: 10px; }
+/* The panel is not four equal boxes. Products and the dough are what a bake actually changes;
+   the folds and the bench are decided once and then stay decided, so the settled ones recede
+   instead of the live ones shouting — they give up the panel's lighter background and keep
+   only a hairline. Emphasis by subtraction: no colour and no ornament the page does not
+   already have. The border is on every section, transparent where it does not show, so going
+   quiet moves nothing. */
+.sec {
+  background: var(--panel);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 10px;
+}
+.sec.quiet { background: none; border-color: var(--line); }
+
 .sechead { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 8px; }
 .sechead h2 {
   margin: 0; font-size: 0.8387rem; font-weight: 700; letter-spacing: 0.03em;
   font-variant-caps: small-caps; color: var(--muted);
 }
+/* A live section's heading is a title; a quiet one's is a label, which is what the muted
+   small caps above already are. */
+.sec:not(.quiet) .sechead h2 { font-size: 0.9032rem; color: var(--ink); }
+/* The break between the two groups, which is wider than the gap inside either. */
+.sec:not(.quiet) + .sec.quiet { margin-top: 8px; }
 .sechead .iconbtn { opacity: 0; transition: opacity 0.12s, color 0.12s; }
 .sec:hover .sechead .iconbtn { opacity: 0.55; }
 .sec.dirty .sechead .iconbtn { opacity: 1; color: var(--accent); }
