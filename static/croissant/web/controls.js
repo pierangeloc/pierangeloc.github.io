@@ -341,4 +341,7 @@ export function section(title, resetLabel, onReset) {
     wrap.append(head, body);
     return { node: wrap, body };
 }
+export function subhead(title) {
+    return el("h3", "subhead", title);
+}
 export { el };
