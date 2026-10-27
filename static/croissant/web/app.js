@@ -1,6 +1,6 @@
 import { solve, defaultLiquids, defaults, doughForButter, formulas, layersOf, recipe, round, search, stripsOf, suggestFix, wrapSandwich } from "../lamination.js";
 import { strings, fill, issueText } from "./i18n.js";
-import { el, numberField, choice, vec2, section } from "./controls.js";
+import { el, numberField, choice, vec2, section, subhead } from "./controls.js";
 import { animation } from "./anim.js";
 import { threeView } from "./three-view.js";
 const STORE = "croissant-calc/v1";
@@ -159,7 +159,7 @@ function refreshReset() {
     btn.querySelector(".count").textContent = n ? String(n) : "";
     btn.title = n === 0 ? t.ui.nothingChanged : `${t.ui.resetHint} · ${n === 1 ? t.ui.changedOne : fill(t.ui.changedMany, { n })}`;
     for (const s of sections) {
-        const dirty = s.keys.some((k) => k in state.params && !sameAsBaseline(k));
+        const dirty = s.keys.some((k) => k in state.params && !sameAsBaseline(k)) || (s.extraDirty?.() ?? false);
         s.node.classList.toggle("dirty", dirty);
     }
 }
@@ -167,18 +167,47 @@ function buildPanel() {
     panel.replaceChildren();
     sections = [];
     notes = [];
-    const add = (title, keys, build) => {
+    const add = (title, keys, build, extra) => {
         const s = section(title, t.ui.reset, () => {
             for (const k of keys)
                 delete state.params[k];
+            extra?.reset();
             save(state);
             render();
         });
         build(s.body);
         panel.appendChild(s.node);
-        sections.push({ node: s.node, keys: keys });
+        sections.push({ node: s.node, keys: keys, extraDirty: extra?.dirty });
     };
-    add(t.sections.dough, ["doughMass", "butterMass", "doughDensity", "butterDensity"], (b) => {
+    add(t.sections.products, ["finalThickness", "croissantBase", "pacWidth", "batonLength", "wantPac", "cutStyle"], (b) => {
+        b.append(numberField({
+            label: t.labels.targetHeight,
+            hint: t.hints.targetHeight,
+            value: state.target,
+            min: 0,
+            max: 32,
+            step: 0.5,
+            unit: "cm",
+            onInput: (v) => {
+                state.target = v;
+                save(state);
+                recompute();
+            },
+        }, modifiedTitle).node);
+        b.append(num("finalThickness", { min: 0.2, max: 1.0, step: 0.05, unit: "mm", asMm: true }).node, num("croissantBase", { min: 6, max: 16, step: 0.5, unit: "cm" }).node, num("pacWidth", { min: 3, max: 10, step: 0.5, unit: "cm" }).node, num("batonLength", { min: 4, max: 16, step: 0.5, unit: "cm" }).node, num("wantPac", { min: 0, max: 120, step: 1, unit: "", decimals: 0 }).node);
+        b.append(choice({
+            label: t.labels.cutStyle,
+            hint: t.hints.cutStyle,
+            value: state.params.cutStyle ?? defaults.cutStyle,
+            reference: undefined,
+            options: [
+                { value: "diagonal", label: t.ui.cutDiagonal },
+                { value: "zigzag", label: t.ui.cutZigzag },
+            ],
+            onInput: (v) => set("cutStyle", v),
+        }, modifiedTitle).node);
+    }, { reset: () => (state.target = 0), dirty: () => state.target > 0 });
+    add(t.sections.dough, ["doughMass", "butterMass", "doughDensity", "butterDensity", "butterSheet", "butterThickness"], (b) => {
         b.append(choice({
             label: t.ui.doughMode,
             hint: t.ui.doughModeHint,
@@ -225,11 +254,7 @@ function buildPanel() {
                 r: round(plan.layerRatio, 2),
             });
         });
-    });
-    add(t.sections.tools, ["rollerWidth", "benchLength", "trim", "maxRollAspect"], (b) => {
-        b.append(num("rollerWidth", { min: 20, max: 60, step: 0.5, unit: "cm" }).node, num("benchLength", { min: 60, max: 200, step: 1, unit: "cm", decimals: 0 }).node, num("trim", { min: 0, max: 3, step: 0.1, unit: "cm" }).node, num("maxRollAspect", { min: 1, max: 20, step: 0.5, unit: "\u00d7" }).node);
-    });
-    add(t.sections.butter, ["butterSheet", "butterThickness"], (b) => {
+        b.append(subhead(t.sections.butter));
         b.append(choice({
             label: t.labels.butterMode,
             hint: t.hints.butterMode,
@@ -258,27 +283,28 @@ function buildPanel() {
                     mm: mm(thickness()),
                 });
             });
-            return;
         }
-        const bs = state.params.butterSheet ?? plannedSheet();
-        b.append(vec2({
-            label: t.labels.butterSheet,
-            hint: t.hints.butterSheet,
-            value: [bs.width, bs.length],
-            names: ["W", "L"],
-            min: 10,
-            max: 60,
-            step: 0.5,
-            unit: "cm",
-            swap: true,
-            swapTitle: t.ui.swapSides,
-            onInput: ([w, l]) => set("butterSheet", { width: w, length: l }),
-        }, modifiedTitle).node);
-        derived(b, (line) => {
-            const sheet = state.params.butterSheet ?? plannedSheet();
-            const v = butterVolume() / (sheet.width * sheet.length);
-            line.textContent = fill(t.ui.measuredSlab, { mm: round(v * 10, 1) });
-        });
+        else {
+            const bs = state.params.butterSheet ?? plannedSheet();
+            b.append(vec2({
+                label: t.labels.butterSheet,
+                hint: t.hints.butterSheet,
+                value: [bs.width, bs.length],
+                names: ["W", "L"],
+                min: 10,
+                max: 60,
+                step: 0.5,
+                unit: "cm",
+                swap: true,
+                swapTitle: t.ui.swapSides,
+                onInput: ([w, l]) => set("butterSheet", { width: w, length: l }),
+            }, modifiedTitle).node);
+            derived(b, (line) => {
+                const sheet = state.params.butterSheet ?? plannedSheet();
+                const v = butterVolume() / (sheet.width * sheet.length);
+                line.textContent = fill(t.ui.measuredSlab, { mm: round(v * 10, 1) });
+            });
+        }
     });
     add(t.sections.folds, ["turns"], (b) => {
         const write = (next) => {
@@ -348,45 +374,8 @@ function buildPanel() {
             line.textContent = fill(t.ui.turnsLine, { turns: list.length, layers: layersOf(list), strips: n, strip: stripWord(n) });
         });
     });
-    {
-        const s = section(t.sections.goal, t.ui.reset, () => {
-            state.target = 0;
-            save(state);
-            render();
-        });
-        s.body.appendChild(numberField({
-            label: t.labels.targetHeight,
-            hint: t.hints.targetHeight,
-            value: state.target,
-            min: 0,
-            max: 32,
-            step: 0.5,
-            unit: "cm",
-            onInput: (v) => {
-                state.target = v;
-                save(state);
-                recompute();
-            },
-        }, modifiedTitle).node);
-        s.node.classList.toggle("dirty", state.target > 0);
-        panel.appendChild(s.node);
-    }
-    add(t.sections.final, ["finalThickness"], (b) => {
-        b.append(num("finalThickness", { min: 0.2, max: 1.0, step: 0.05, unit: "mm", asMm: true }).node);
-    });
-    add(t.sections.products, ["croissantBase", "pacWidth", "batonLength", "wantPac", "cutStyle"], (b) => {
-        b.append(num("croissantBase", { min: 6, max: 16, step: 0.5, unit: "cm" }).node, num("pacWidth", { min: 3, max: 10, step: 0.5, unit: "cm" }).node, num("batonLength", { min: 4, max: 16, step: 0.5, unit: "cm" }).node, num("wantPac", { min: 0, max: 120, step: 1, unit: "", decimals: 0 }).node);
-        b.append(choice({
-            label: t.labels.cutStyle,
-            hint: t.hints.cutStyle,
-            value: state.params.cutStyle ?? defaults.cutStyle,
-            reference: undefined,
-            options: [
-                { value: "diagonal", label: t.ui.cutDiagonal },
-                { value: "zigzag", label: t.ui.cutZigzag },
-            ],
-            onInput: (v) => set("cutStyle", v),
-        }, modifiedTitle).node);
+    add(t.sections.tools, ["rollerWidth", "benchLength", "trim", "maxRollAspect"], (b) => {
+        b.append(num("rollerWidth", { min: 20, max: 60, step: 0.5, unit: "cm" }).node, num("benchLength", { min: 60, max: 200, step: 1, unit: "cm", decimals: 0 }).node, num("trim", { min: 0, max: 3, step: 0.1, unit: "cm" }).node, num("maxRollAspect", { min: 1, max: 20, step: 0.5, unit: "\u00d7" }).node);
     });
 }
 const dim = (d) => d ? `${round(d.w)}×${round(d.l)}×${round(d.t, 1)}` : "—";

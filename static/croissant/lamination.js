@@ -13,7 +13,7 @@ export const defaults = {
     ],
     finalThickness: 0.4,
     maxPassRatio: 1.7,
-    maxRollAspect: 4,
+    maxRollAspect: 2.5,
     croissantBase: 10,
     cutStyle: "diagonal",
     pacWidth: 5.5,
