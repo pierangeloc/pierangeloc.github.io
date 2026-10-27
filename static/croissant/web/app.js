@@ -167,14 +167,15 @@ function buildPanel() {
     panel.replaceChildren();
     sections = [];
     notes = [];
-    const add = (title, keys, build, extra) => {
+    const add = (title, keys, build, opts) => {
+        const extra = opts?.extra;
         const s = section(title, t.ui.reset, () => {
             for (const k of keys)
                 delete state.params[k];
             extra?.reset();
             save(state);
             render();
-        });
+        }, opts?.quiet);
         build(s.body);
         panel.appendChild(s.node);
         sections.push({ node: s.node, keys: keys, extraDirty: extra?.dirty });
@@ -206,7 +207,7 @@ function buildPanel() {
             ],
             onInput: (v) => set("cutStyle", v),
         }, modifiedTitle).node);
-    }, { reset: () => (state.target = 0), dirty: () => state.target > 0 });
+    }, { extra: { reset: () => (state.target = 0), dirty: () => state.target > 0 } });
     add(t.sections.dough, ["doughMass", "butterMass", "doughDensity", "butterDensity", "butterSheet", "butterThickness"], (b) => {
         b.append(choice({
             label: t.ui.doughMode,
@@ -373,10 +374,10 @@ function buildPanel() {
             const n = stripsOf(list);
             line.textContent = fill(t.ui.turnsLine, { turns: list.length, layers: layersOf(list), strips: n, strip: stripWord(n) });
         });
-    });
+    }, { quiet: true });
     add(t.sections.tools, ["rollerWidth", "benchLength", "trim", "maxRollAspect"], (b) => {
         b.append(num("rollerWidth", { min: 20, max: 60, step: 0.5, unit: "cm" }).node, num("benchLength", { min: 60, max: 200, step: 1, unit: "cm", decimals: 0 }).node, num("trim", { min: 0, max: 3, step: 0.1, unit: "cm" }).node, num("maxRollAspect", { min: 1, max: 20, step: 0.5, unit: "\u00d7" }).node);
-    });
+    }, { quiet: true });
 }
 const dim = (d) => d ? `${round(d.w)}×${round(d.l)}×${round(d.t, 1)}` : "—";
 function stepTitle(s, p) {
